@@ -393,6 +393,32 @@ var (
 			inputData: map[string]interface{}{"created_at": time.Now()},
 			expResult: rules.NodeEvaluation{Result: true},
 		},
+		{
+			ruleNodes: rules.Node{
+				Operator: rules.Or,
+				Children: []rules.Node{
+					{Operator: rules.Eq, Field: "firstName", Value: "John"},
+					{Operator: rules.Eq, Field: "lastName", Value: "Doe"},
+				},
+			},
+			inputData: map[string]interface{}{
+				"firstName": "Mustermann",
+				"lastName":  "Doe",
+			},
+			expResult: rules.NodeEvaluation{Result: true},
+		},
+		{
+			ruleNodes: rules.Node{
+				Operator: rules.Not,
+				Children: []rules.Node{
+					{Operator: rules.Eq, Field: "firstName", Value: "John"},
+				},
+			},
+			inputData: map[string]interface{}{
+				"firstName": "Mustermann",
+			},
+			expResult: rules.NodeEvaluation{Result: true},
+		},
 	}
 )
 
