@@ -21,7 +21,7 @@ func Evaluate(
 		now = time.Now()
 	}
 	evaluation := RuleResult{
-		Node: Rule{
+		Rule: Rule{
 			Operator: node.Operator,
 		},
 	}
@@ -61,7 +61,7 @@ func Evaluate(
 		return evaluation
 
 	default:
-		evaluation.Node.Value = node.Value
+		evaluation.Rule.Value = node.Value
 		evaluation.Result, evaluation.Mismatch = evaluateRule(
 			node.Operator, resolveField(node.Field, data), node.Value,
 		)

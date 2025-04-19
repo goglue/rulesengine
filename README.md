@@ -71,36 +71,35 @@ import (
     "fmt"
 
     "github.com/goglue/rulesengine"
-    "github.com/goglue/rulesengine/rules"
 )
 
 func main() {
-    rule := rules.Rule{
-        Operator: rules.And,
-        Children: []rules.Rule{
+    rule := rulesengine.Rule{
+        Operator: rulesengine.And,
+        Children: []rulesengine.Rule{
             {
-                Operator: rules.And,
-                Children: []rules.Node{
+                Operator: rulesengine.And,
+                Children: []rulesengine.Rule{
                     {
                         Field: "user.name",
-                        Operator: rules.LengthGt,
+                        Operator: rulesengine.LengthGt,
                         Value: 2,
                     },
                     {
                         Field: "user.name",
-                        Operator: rules.LengthLt,
+                        Operator: rulesengine.LengthLt,
                         Value: 25,
                     },
                 },
             },
             {
                 Field:    "user.age",
-                Operator: rules.Gte,
+                Operator: rulesengine.Gte,
                 Value:    21,
             },
             {
                 Field:    "user.country",
-                Operator: rules.Eq,
+                Operator: rulesengine.Eq,
                 Value:    "DE",
             },
         },

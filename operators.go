@@ -1,6 +1,7 @@
 package rulesengine
 
 type (
+	// Operator type is the operators enums type
 	Operator string
 )
 
