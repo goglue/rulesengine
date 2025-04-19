@@ -129,14 +129,10 @@ func evaluateRule(operator rules.Operator, actual, expected interface{}) bool {
 		return isWithinTime(actual, expected, operator)
 
 	// ---------- Null / Existence ----------
-	case rules.IsNull:
+	case rules.IsNull, rules.NotExists:
 		return actual == nil
-	case rules.IsNotNull:
+	case rules.IsNotNull, rules.Exists:
 		return actual != nil
-	case rules.Exists:
-		return actual != nil
-	case rules.NotExists:
-		return actual == nil
 
 	// ---------- Type Checks ----------
 	case rules.IsString:
@@ -150,7 +146,8 @@ func evaluateRule(operator rules.Operator, actual, expected interface{}) bool {
 	case rules.IsList:
 		return reflect.TypeOf(actual).Kind() == reflect.Slice
 	case rules.IsObject:
-		return reflect.TypeOf(actual).Kind() == reflect.Map
+		return reflect.TypeOf(actual).Kind() == reflect.Map ||
+			reflect.TypeOf(actual).Kind() == reflect.Struct
 	case rules.IsDate:
 		_, ok := actual.(time.Time)
 		return ok

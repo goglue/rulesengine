@@ -25,7 +25,7 @@ func toString(v interface{}) string {
 
 func isNumeric(v interface{}) bool {
 	switch v.(type) {
-	case int, int64, float64, float32:
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float64, float32:
 		return true
 	}
 	return false
