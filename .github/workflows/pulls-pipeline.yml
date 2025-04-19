@@ -1,0 +1,65 @@
+name: pull-pipeline
+
+on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '**.md'
+      - '**.yml'
+      - 'Makefile'
+      - '**.puml'
+      - '**.sh'
+      - '**.sql'
+      - 'Dockerfile-**'
+      - 'Dockerfile'
+      - '.gitkeep'
+
+jobs:
+  pull-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Setup golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.23'
+          check-latest: true
+
+      - uses: actions/cache@v4
+        name: Caching go modules
+        id: golang-cache
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Running tests
+        run: make run-tests
+
+      - name: Go Coverage Badge
+        uses: tj-actions/coverage-badge-go@v2
+        with:
+          filename: coverage.out
+
+      - name: Verify Changed files
+        uses: tj-actions/verify-changed-files@v17
+        id: verify-changed-files
+        with:
+          files: README.md
+
+      - name: Create Pull Request
+        if: steps.verify-changed-files.outputs.files_changed == 'true' && github.event_name != 'pull_request' && runner.os == 'Linux'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          base: ${{ steps.extract_branch.outputs.branch }}
+          title: "chore: updated coverage badge"
+          branch: "chore/update-coverage"
+          commit-message: "chore: updated coverage badge"
+          body: "updated coverage badge"
+          token: ${{ secrets.GITHUB_TOKEN }}
