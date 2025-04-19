@@ -477,3 +477,35 @@ func TestEvaluateWithCustomFunc(t *testing.T) {
 	result := Evaluate(ruleNode, data, DefaultOptions())
 	assert.Equal(true, result.Result)
 }
+
+func BenchmarkEvaluate(b *testing.B) {
+	ruleNodes := rules.Node{
+		Operator: rules.And,
+		Children: []rules.Node{
+			{Operator: rules.IsNumber, Field: "user.age"},
+			{Operator: rules.Gte, Field: "user.age", Value: 25},
+			{Operator: rules.Matches, Field: "jobTitle", Value: "s([a-z]+)re"},
+			{Operator: rules.IsObject, Field: "user.address"},
+			{Operator: rules.Eq, Field: "user.address.zipCode", Value: 5},
+			{Operator: rules.IsNotNull, Field: "user.address.streetName"},
+			{Operator: rules.LengthGt, Field: "user.address.streetName", Value: 5},
+			{Operator: rules.LengthGt, Field: "user.firstName", Value: 2},
+			{Operator: rules.LengthGt, Field: "user.lastName", Value: 2},
+		},
+	}
+	data := map[string]interface{}{
+		"user": map[string]interface{}{
+			"firstName": "John",
+			"lastName":  "Doe",
+			"age":       25,
+			"jobTitle":  "software",
+			"address": map[string]interface{}{
+				"streetName": "Johannisstraße",
+				"zipCode":    "13088",
+			},
+		},
+	}
+	for i := 0; i < b.N; i++ {
+		_ = Evaluate(ruleNodes, data, DefaultOptions())
+	}
+}

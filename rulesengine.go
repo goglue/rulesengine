@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+var (
+	reMatchMap = map[string]*regexp.Regexp{}
+)
+
 func Evaluate(
 	node rules.Node, data map[string]interface{}, opts Options,
 ) rules.NodeEvaluation {
@@ -109,7 +113,13 @@ func evaluateRule(operator rules.Operator, actual, expected interface{}) bool {
 	case rules.EndsWith:
 		return strings.HasSuffix(toString(actual), toString(expected))
 	case rules.Matches:
-		re := regexp.MustCompile(toString(expected))
+		templateName := toString(expected)
+		re, ok := reMatchMap[templateName]
+		if !ok {
+			re = regexp.MustCompile(templateName)
+			reMatchMap[templateName] = re
+		}
+
 		return re.MatchString(toString(actual))
 	case rules.LengthEq, rules.LengthGt, rules.LengthLt:
 		return compareLength(actual, expected, operator)
