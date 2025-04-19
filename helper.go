@@ -2,7 +2,6 @@ package rulesengine
 
 import (
 	"fmt"
-	"github.com/goglue/rulesengine/rules"
 	"reflect"
 	"strconv"
 	"time"
@@ -48,17 +47,17 @@ func toFloat(v interface{}) float64 {
 	return 0
 }
 
-func compareNumeric(a, b interface{}, op rules.Operator) bool {
+func compareNumeric(a, b interface{}, op Operator) bool {
 	af := toFloat(a)
 	bf := toFloat(b)
 	switch op {
-	case rules.Gt:
+	case Gt:
 		return af > bf
-	case rules.Gte:
+	case Gte:
 		return af >= bf
-	case rules.Lt:
+	case Lt:
 		return af < bf
-	case rules.Lte:
+	case Lte:
 		return af <= bf
 	}
 	return false
@@ -88,7 +87,7 @@ func isBetween(val, rangeVal interface{}) bool {
 	return v >= min && v <= max
 }
 
-func compareLength(val interface{}, target interface{}, op rules.Operator) bool {
+func compareLength(val interface{}, target interface{}, op Operator) bool {
 	length := 0
 	switch v := val.(type) {
 	case string:
@@ -100,26 +99,26 @@ func compareLength(val interface{}, target interface{}, op rules.Operator) bool 
 	}
 	expected := int(toFloat(target))
 	switch op {
-	case rules.LengthEq:
+	case LengthEq:
 		return length == expected
-	case rules.LengthGt:
+	case LengthGt:
 		return length > expected
-	case rules.LengthLt:
+	case LengthLt:
 		return length < expected
 	}
 	return false
 }
 
-func compareTime(a, b interface{}, op rules.Operator) bool {
+func compareTime(a, b interface{}, op Operator) bool {
 	at, aok := a.(time.Time)
 	bt, bok := b.(time.Time)
 	if !aok || !bok {
 		return false
 	}
 	switch op {
-	case rules.Before:
+	case Before:
 		return at.Before(bt)
-	case rules.After:
+	case After:
 		return at.After(bt)
 	}
 	return false
@@ -137,7 +136,7 @@ func isTimeBetween(val interface{}, rangeVal interface{}) bool {
 	return (v.After(r[0]) || v.Equal(r[0])) && (v.Before(r[1]) || v.Equal(r[1]))
 }
 
-func isWithinTime(val interface{}, duration interface{}, op rules.Operator) bool {
+func isWithinTime(val interface{}, duration interface{}, op Operator) bool {
 	t, ok := val.(time.Time)
 	if !ok {
 		return false
@@ -149,9 +148,9 @@ func isWithinTime(val interface{}, duration interface{}, op rules.Operator) bool
 
 	now := time.Now()
 	switch op {
-	case rules.WithinLast:
+	case WithinLast:
 		return t.After(now.Add(-dur))
-	case rules.WithinNext:
+	case WithinNext:
 		return t.Before(now.Add(dur))
 	}
 	return false

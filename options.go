@@ -1,11 +1,9 @@
 package rulesengine
 
-import "github.com/goglue/rulesengine/rules"
-
 type (
 	LoggerFunc func(
 		fieldName string,
-		operator rules.Operator,
+		operator Operator,
 		actual,
 		expected interface{},
 	)
@@ -21,7 +19,7 @@ func DefaultOptions() Options {
 		Timing: false,
 		Logger: func(
 			fieldName string,
-			operator rules.Operator,
+			operator Operator,
 			actual, expected interface{},
 		) {
 		},

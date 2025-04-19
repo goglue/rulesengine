@@ -75,9 +75,9 @@ import (
 )
 
 func main() {
-    rule := rules.Node{
+    rule := rules.Rule{
         Operator: rules.And,
-        Children: []rules.Node{
+        Children: []rules.Rule{
             {
                 Operator: rules.And,
                 Children: []rules.Node{

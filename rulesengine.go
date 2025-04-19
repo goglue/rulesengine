@@ -1,7 +1,6 @@
 package rulesengine
 
 import (
-	"github.com/goglue/rulesengine/rules"
 	"reflect"
 	"regexp"
 	"strings"
@@ -12,21 +11,23 @@ var (
 	reMatchMap = map[string]*regexp.Regexp{}
 )
 
+// Evaluate method executes the evaluation of the passed rule and all its
+// children, it returns [RuleResult] containing the rule evaluation results.
 func Evaluate(
-	node rules.Rule, data map[string]any, opts Options,
-) rules.RuleResult {
+	node Rule, data map[string]any, opts Options,
+) RuleResult {
 	var now time.Time
 	if opts.Timing {
 		now = time.Now()
 	}
-	evaluation := rules.RuleResult{
-		Node: rules.Rule{
+	evaluation := RuleResult{
+		Node: Rule{
 			Operator: node.Operator,
 		},
 	}
 
 	switch node.Operator {
-	case rules.And:
+	case And:
 		evaluation.Result = true
 		for _, child := range node.Children {
 			childEvaluation := Evaluate(child, data, opts)
@@ -39,7 +40,7 @@ func Evaluate(
 		}
 		return evaluation
 
-	case rules.Or:
+	case Or:
 		for _, child := range node.Children {
 			childEvaluation := Evaluate(child, data, opts)
 			evaluation.Children = append(evaluation.Children, childEvaluation)
@@ -51,7 +52,7 @@ func Evaluate(
 		}
 		return evaluation
 
-	case rules.Not:
+	case Not:
 		evaluation := Evaluate(node.Children[0], data, opts)
 		evaluation.Result = !evaluation.Result
 		if opts.Timing {
@@ -85,72 +86,72 @@ func resolveField(path string, data map[string]any) any {
 	return current
 }
 
-func evaluateRule(operator rules.Operator, actual, expected any) (bool, any) {
+func evaluateRule(operator Operator, actual, expected any) (bool, any) {
 	switch operator {
 	// ---------- Equality ----------
-	case rules.Eq:
+	case Eq:
 		if !compareEqual(actual, expected) {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.Neq:
+	case Neq:
 		if compareEqual(actual, expected) {
 			return false, actual
 		}
 		return true, nil
 
 	// ---------- Numeric ----------
-	case rules.Gt, rules.Gte, rules.Lt, rules.Lte:
+	case Gt, Gte, Lt, Lte:
 		if !compareNumeric(actual, expected, operator) {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.Between:
+	case Between:
 		if !isBetween(actual, expected) {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.In:
+	case In:
 		if !inList(actual, expected) {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.NotIn:
+	case NotIn:
 		if inList(actual, expected) {
 			return false, actual
 		}
 		return true, nil
 
 	// ---------- String ----------
-	case rules.Contains:
+	case Contains:
 		if !strings.Contains(toString(actual), toString(expected)) {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.NotContains:
+	case NotContains:
 		if strings.Contains(toString(actual), toString(expected)) {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.StartsWith:
+	case StartsWith:
 		if !strings.HasPrefix(toString(actual), toString(expected)) {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.EndsWith:
+	case EndsWith:
 		if !strings.HasSuffix(toString(actual), toString(expected)) {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.Matches:
+	case Matches:
 		templateName := toString(expected)
 		re, ok := reMatchMap[templateName]
 		if !ok {
@@ -162,98 +163,98 @@ func evaluateRule(operator rules.Operator, actual, expected any) (bool, any) {
 		}
 		return true, nil
 
-	case rules.LengthEq, rules.LengthGt, rules.LengthLt:
+	case LengthEq, LengthGt, LengthLt:
 		if !compareLength(actual, expected, operator) {
 			return false, actual
 		}
 		return true, nil
 
 	// ---------- Boolean ----------
-	case rules.IsTrue:
+	case IsTrue:
 		if actual != true {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.IsFalse:
+	case IsFalse:
 		if actual != false {
 			return false, actual
 		}
 		return true, nil
 
 	// ---------- Date ----------
-	case rules.Before, rules.After:
+	case Before, After:
 		if !compareTime(actual, expected, operator) {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.DateBetween:
+	case DateBetween:
 		if !isTimeBetween(actual, expected) {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.WithinLast, rules.WithinNext:
+	case WithinLast, WithinNext:
 		if !isWithinTime(actual, expected, operator) {
 			return false, actual
 		}
 		return true, nil
 
 	// ---------- Null / Existence ----------
-	case rules.IsNull, rules.NotExists:
+	case IsNull, NotExists:
 		if actual != nil {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.IsNotNull, rules.Exists:
+	case IsNotNull, Exists:
 		if actual == nil {
 			return false, actual
 		}
 		return true, nil
 
 	// ---------- Type Checks ----------
-	case rules.IsString:
+	case IsString:
 		_, ok := actual.(string)
 		if !ok {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.IsNumber:
+	case IsNumber:
 		if !isNumeric(actual) {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.IsBool:
+	case IsBool:
 		if _, ok := actual.(bool); !ok {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.IsList:
+	case IsList:
 		if reflect.TypeOf(actual).Kind() != reflect.Slice {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.IsObject:
+	case IsObject:
 		if reflect.TypeOf(actual).Kind() != reflect.Map &&
 			reflect.TypeOf(actual).Kind() != reflect.Struct {
 			return false, actual
 		}
 		return true, nil
 
-	case rules.IsDate:
+	case IsDate:
 		if _, ok := actual.(time.Time); !ok {
 			return false, actual
 		}
 		return true, nil
 
 	// ---------- Custom Checks ----------
-	case rules.Custom:
+	case Custom:
 		argsList, ok := expected.([]any)
 		if !ok || len(argsList) == 0 {
 			return false, nil
@@ -262,7 +263,7 @@ func evaluateRule(operator rules.Operator, actual, expected any) (bool, any) {
 		if !ok {
 			return false, nil
 		}
-		fn, found := rules.GetFunc(fnName)
+		fn, found := GetFunc(fnName)
 		if !found {
 			return false, nil
 		}
