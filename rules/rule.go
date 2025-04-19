@@ -3,17 +3,18 @@ package rules
 import "time"
 
 type (
-	Node struct {
+	Rule struct {
 		Operator Operator    `json:"operator"`
 		Field    string      `json:"field,omitempty"`
 		Value    interface{} `json:"value,omitempty"`
-		Children []Node      `json:"children,omitempty"`
+		Children []Rule      `json:"children,omitempty"`
 	}
 
-	NodeEvaluation struct {
-		Node      Node
+	RuleResult struct {
+		Node      Rule
 		Result    bool
-		Children  []NodeEvaluation
+		Children  []RuleResult
+		Mismatch  interface{}
 		TimeTaken time.Duration
 	}
 )

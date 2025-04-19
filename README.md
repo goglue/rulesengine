@@ -1,5 +1,6 @@
 # 🧠 RulesEngine
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/goglue/rulesengine.svg)](https://pkg.go.dev/github.com/goglue/rulesengine)
 ![Build Status](https://github.com/cubeox/lighthouse/actions/workflows/pulls-pipeline.yml/badge.svg)
 ![Coverage](https://img.shields.io/badge/Coverage-81.7%25-brightgreen)
 
@@ -78,6 +79,21 @@ func main() {
         Operator: rules.And,
         Children: []rules.Node{
             {
+                Operator: rules.And,
+                Children: []rules.Node{
+                    {
+                        Field: "user.name",
+                        Operator: rules.LengthGt,
+                        Value: 2,
+                    },
+                    {
+                        Field: "user.name",
+                        Operator: rules.LengthLt,
+                        Value: 25,
+                    },
+                },
+            },
+            {
                 Field:    "user.age",
                 Operator: rules.Gte,
                 Value:    21,
@@ -92,12 +108,13 @@ func main() {
 
     data := map[string]interface{}{
         "user": map[string]interface{}{
+            "name":    "Test",
             "age":     25,
-            "country": "US",
+            "country": "DE",
         },
     }
 
-    result := rulesengine.Evaluate(rule, data, rulesengine.Options{})
+    result := rulesengine.Evaluate(rule, data, rulesengine.DefaultOptions())
     fmt.Println("Result:", result.Result) // true
 }
 ```
