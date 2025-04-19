@@ -1,7 +1,7 @@
 # 🧠 RulesEngine
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/goglue/rulesengine.svg)](https://pkg.go.dev/github.com/goglue/rulesengine)
-![Build Status](https://github.com/cubeox/lighthouse/actions/workflows/pulls-pipeline.yml/badge.svg)
+![Build Status](https://github.com/goglue/rulesengine/actions/workflows/pulls-pipeline.yml/badge.svg)
 ![Coverage](https://img.shields.io/badge/Coverage-81.7%25-brightgreen)
 
 A flexible and extensible rules engine written in Go. Use it to define
