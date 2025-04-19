@@ -78,12 +78,12 @@ func main() {
         Operator: rules.And,
         Children: []rules.Node{
             {
-                Field:    "age",
+                Field:    "user.age",
                 Operator: rules.Gte,
                 Value:    21,
             },
             {
-                Field:    "country",
+                Field:    "user.country",
                 Operator: rules.Eq,
                 Value:    "DE",
             },
@@ -91,8 +91,10 @@ func main() {
     }
 
     data := map[string]interface{}{
-        "age":     25,
-        "country": "US",
+		"user": map[string]interface{}{
+            "age":     25,
+            "country": "US",
+        },
     }
 
     result := rulesengine.Evaluate(rule, data, rulesengine.Options{})
