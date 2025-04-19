@@ -91,7 +91,7 @@ func main() {
     }
 
     data := map[string]interface{}{
-		"user": map[string]interface{}{
+        "user": map[string]interface{}{
             "age":     25,
             "country": "US",
         },
