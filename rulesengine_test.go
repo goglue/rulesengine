@@ -1,7 +1,6 @@
 package rulesengine
 
 import (
-	"github.com/goglue/rulesengine/rules"
 	assertion "github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
@@ -13,21 +12,21 @@ var (
 	parsedTimeExp, _  = time.Parse("2006-01-02", "2015-01-01")
 	last10Sec, _      = time.ParseDuration("10s")
 	testData          = []struct {
-		ruleNodes rules.Node
+		ruleNodes Rule
 		inputData map[string]interface{}
-		expResult rules.NodeEvaluation
+		expResult RuleResult
 	}{
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.And,
-				Children: []rules.Node{
+			ruleNodes: Rule{
+				Operator: And,
+				Children: []Rule{
 					{
-						Operator: rules.Eq,
+						Operator: Eq,
 						Field:    "user.firstName",
 						Value:    "John",
 					},
 					{
-						Operator: rules.Eq,
+						Operator: Eq,
 						Field:    "user.lastName",
 						Value:    "Doe",
 					},
@@ -39,385 +38,426 @@ var (
 					"lastName":  "Doe",
 				},
 			},
-			expResult: rules.NodeEvaluation{
+			expResult: RuleResult{
 				Result: true,
 			},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Eq, Field: "name", Value: "John",
+			ruleNodes: Rule{
+				Operator: Eq, Field: "name", Value: "John",
 			},
 			inputData: map[string]interface{}{"name": "John"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Neq, Field: "name", Value: "Johny",
+			ruleNodes: Rule{
+				Operator: Neq, Field: "name", Value: "Johny",
 			},
 			inputData: map[string]interface{}{"name": "John"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Gt, Field: "age", Value: 10,
+			ruleNodes: Rule{
+				Operator: Gt, Field: "age", Value: 10,
 			},
 			inputData: map[string]interface{}{"age": 11},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Lt, Field: "age", Value: 10,
+			ruleNodes: Rule{
+				Operator: Lt, Field: "age", Value: 10,
 			},
 			inputData: map[string]interface{}{"age": 9},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Gte, Field: "age", Value: 10,
+			ruleNodes: Rule{
+				Operator: Gte, Field: "age", Value: 10,
 			},
 			inputData: map[string]interface{}{"age": 10},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Lte, Field: "age", Value: 10,
+			ruleNodes: Rule{
+				Operator: Lte, Field: "age", Value: 10,
 			},
 			inputData: map[string]interface{}{"age": 10},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Between, Field: "age", Value: []interface{}{10, 20},
+			ruleNodes: Rule{
+				Operator: Between, Field: "age", Value: []interface{}{10, 20},
 			},
 			inputData: map[string]interface{}{"age": 15},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.In, Field: "role", Value: []interface{}{"admin", "manager"},
+			ruleNodes: Rule{
+				Operator: In, Field: "role", Value: []interface{}{"admin", "manager"},
 			},
 			inputData: map[string]interface{}{"role": "admin"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.In, Field: "role", Value: []interface{}{"admin", "manager"},
+			ruleNodes: Rule{
+				Operator: In, Field: "role", Value: []interface{}{"admin", "manager"},
 			},
 			inputData: map[string]interface{}{"role": "editor"},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.NotIn, Field: "role", Value: []interface{}{"admin", "manager"},
+			ruleNodes: Rule{
+				Operator: NotIn, Field: "role", Value: []interface{}{"admin", "manager"},
 			},
 			inputData: map[string]interface{}{"role": "editor"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.NotIn, Field: "role", Value: []interface{}{"admin", "manager"},
+			ruleNodes: Rule{
+				Operator: NotIn, Field: "role", Value: []interface{}{"admin", "manager"},
 			},
 			inputData: map[string]interface{}{"role": "manager"},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Contains, Field: "secret", Value: "%",
+			ruleNodes: Rule{
+				Operator: Contains, Field: "secret", Value: "%",
 			},
 			inputData: map[string]interface{}{"secret": "some%password"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Contains, Field: "secret", Value: "%",
+			ruleNodes: Rule{
+				Operator: Contains, Field: "secret", Value: "%",
 			},
 			inputData: map[string]interface{}{"secret": "some_password"},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.NotContains, Field: "secret", Value: "%",
+			ruleNodes: Rule{
+				Operator: NotContains, Field: "secret", Value: "%",
 			},
 			inputData: map[string]interface{}{"secret": "some_password"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.NotContains, Field: "secret", Value: "%",
+			ruleNodes: Rule{
+				Operator: NotContains, Field: "secret", Value: "%",
 			},
 			inputData: map[string]interface{}{"secret": "some%password"},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.StartsWith, Field: "secret", Value: "some",
+			ruleNodes: Rule{
+				Operator: StartsWith, Field: "secret", Value: "some",
 			},
 			inputData: map[string]interface{}{"secret": "some%password"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.StartsWith, Field: "secret", Value: "password",
+			ruleNodes: Rule{
+				Operator: StartsWith, Field: "secret", Value: "password",
 			},
 			inputData: map[string]interface{}{"secret": "some%password"},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.EndsWith, Field: "secret", Value: "password",
+			ruleNodes: Rule{
+				Operator: EndsWith, Field: "secret", Value: "password",
 			},
 			inputData: map[string]interface{}{"secret": "some%password"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.EndsWith, Field: "secret", Value: "some",
+			ruleNodes: Rule{
+				Operator: EndsWith, Field: "secret", Value: "some",
 			},
 			inputData: map[string]interface{}{"secret": "some%password"},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Matches, Field: "secret", Value: "p([a-z]+)ch",
+			ruleNodes: Rule{
+				Operator: Matches, Field: "secret", Value: "p([a-z]+)ch",
 			},
 			inputData: map[string]interface{}{"secret": "peach"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Matches, Field: "secret", Value: "p([a-z]+)ch",
+			ruleNodes: Rule{
+				Operator: Matches, Field: "secret", Value: "p([a-z]+)ch",
 			},
 			inputData: map[string]interface{}{"secret": "pencil"},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.LengthEq, Field: "secret", Value: "3",
+			ruleNodes: Rule{
+				Operator: LengthEq, Field: "secret", Value: "3",
 			},
 			inputData: map[string]interface{}{"secret": "abc"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.LengthEq, Field: "secret", Value: "3",
+			ruleNodes: Rule{
+				Operator: LengthEq, Field: "secret", Value: "3",
 			},
 			inputData: map[string]interface{}{"secret": "abcd"},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.LengthGt, Field: "secret", Value: "3",
+			ruleNodes: Rule{
+				Operator: LengthGt, Field: "secret", Value: "3",
 			},
 			inputData: map[string]interface{}{"secret": "abcd"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.LengthGt, Field: "secret", Value: "3",
+			ruleNodes: Rule{
+				Operator: LengthGt, Field: "secret", Value: "3",
 			},
 			inputData: map[string]interface{}{"secret": "abc"},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.LengthLt, Field: "secret", Value: "3",
+			ruleNodes: Rule{
+				Operator: LengthLt, Field: "secret", Value: "3",
 			},
 			inputData: map[string]interface{}{"secret": "ab"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.LengthLt, Field: "secret", Value: "3",
+			ruleNodes: Rule{
+				Operator: LengthLt, Field: "secret", Value: "3",
 			},
 			inputData: map[string]interface{}{"secret": "abc"},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsTrue, Field: "secret",
+			ruleNodes: Rule{
+				Operator: IsTrue, Field: "secret",
 			},
 			inputData: map[string]interface{}{"secret": true},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsTrue, Field: "secret",
+			ruleNodes: Rule{
+				Operator: IsTrue, Field: "secret",
 			},
 			inputData: map[string]interface{}{"secret": false},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsFalse, Field: "secret",
+			ruleNodes: Rule{
+				Operator: IsFalse, Field: "secret",
 			},
 			inputData: map[string]interface{}{"secret": false},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsFalse, Field: "secret",
+			ruleNodes: Rule{
+				Operator: IsFalse, Field: "secret",
 			},
 			inputData: map[string]interface{}{"secret": true},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Before, Field: "startDate", Value: parsedTimeExp,
+			ruleNodes: Rule{
+				Operator: Before, Field: "startDate", Value: parsedTimeExp,
 			},
 			inputData: map[string]interface{}{"startDate": parsedTimeData},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.After, Field: "startDate", Value: parsedTimeExp,
+			ruleNodes: Rule{
+				Operator: After, Field: "startDate", Value: parsedTimeExp,
 			},
 			inputData: map[string]interface{}{"startDate": parsedTimeData},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.DateBetween, Field: "startDate", Value: []time.Time{parsedTimeExp, parsedTimeExp.Add(24 * time.Hour)},
+			ruleNodes: Rule{
+				Operator: DateBetween, Field: "startDate", Value: []time.Time{parsedTimeExp, parsedTimeExp.Add(24 * time.Hour)},
 			},
 			inputData: map[string]interface{}{"startDate": parsedTimeExp.Add(3 * time.Hour)},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.DateBetween, Field: "startDate", Value: []time.Time{parsedTimeExp, parsedTimeExp.Add(24 * time.Hour)},
+			ruleNodes: Rule{
+				Operator: DateBetween, Field: "startDate", Value: []time.Time{parsedTimeExp, parsedTimeExp.Add(24 * time.Hour)},
 			},
 			inputData: map[string]interface{}{"startDate": parsedTimeExp.Add(-3 * time.Hour)},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.WithinLast, Field: "startDate", Value: last10Sec,
+			ruleNodes: Rule{
+				Operator: WithinLast, Field: "startDate", Value: last10Sec,
 			},
 			inputData: map[string]interface{}{"startDate": time.Now().Add(-5 * time.Second)},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.WithinLast, Field: "startDate", Value: last10Sec,
+			ruleNodes: Rule{
+				Operator: WithinLast, Field: "startDate", Value: last10Sec,
 			},
 			inputData: map[string]interface{}{"startDate": time.Now().Add(-15 * time.Second)},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.WithinNext, Field: "startDate", Value: last10Sec,
+			ruleNodes: Rule{
+				Operator: WithinNext, Field: "startDate", Value: last10Sec,
 			},
 			inputData: map[string]interface{}{"startDate": time.Now().Add(5 * time.Second)},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.WithinNext, Field: "startDate", Value: last10Sec,
+			ruleNodes: Rule{
+				Operator: WithinNext, Field: "startDate", Value: last10Sec,
 			},
 			inputData: map[string]interface{}{"startDate": time.Now().Add(11 * time.Second)},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsNull, Field: "someField",
+			ruleNodes: Rule{
+				Operator: IsNull, Field: "someField",
 			},
 			inputData: map[string]interface{}{"anotherField": "something"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsNull, Field: "someField",
+			ruleNodes: Rule{
+				Operator: IsNull, Field: "someField",
 			},
 			inputData: map[string]interface{}{"someField": "something"},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsNotNull, Field: "someField",
+			ruleNodes: Rule{
+				Operator: IsNotNull, Field: "someField",
 			},
 			inputData: map[string]interface{}{"someField": "something"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsNotNull, Field: "someField",
+			ruleNodes: Rule{
+				Operator: IsNotNull, Field: "someField",
 			},
 			inputData: map[string]interface{}{"anotherField": "something"},
-			expResult: rules.NodeEvaluation{Result: false},
+			expResult: RuleResult{Result: false},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsString, Field: "zipCode",
+			ruleNodes: Rule{
+				Operator: IsString, Field: "zipCode",
 			},
 			inputData: map[string]interface{}{"zipCode": "1300"},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsNumber, Field: "age",
+			ruleNodes: Rule{
+				Operator: IsNumber, Field: "age",
 			},
 			inputData: map[string]interface{}{"age": uint32(20)},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsBool, Field: "agreed",
+			ruleNodes: Rule{
+				Operator: IsBool, Field: "agreed",
 			},
 			inputData: map[string]interface{}{"agreed": true},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsList, Field: "roles",
+			ruleNodes: Rule{
+				Operator: IsList, Field: "roles",
 			},
 			inputData: map[string]interface{}{"roles": []int{1, 2, 3}},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsObject, Field: "address",
+			ruleNodes: Rule{
+				Operator: IsObject, Field: "address",
 			},
 			inputData: map[string]interface{}{"address": map[string]interface{}{}},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsObject, Field: "address",
+			ruleNodes: Rule{
+				Operator: IsObject, Field: "address",
 			},
 			inputData: map[string]interface{}{"address": struct{}{}},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.IsDate, Field: "created_at",
+			ruleNodes: Rule{
+				Operator: IsDate, Field: "created_at",
 			},
 			inputData: map[string]interface{}{"created_at": time.Now()},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Or,
-				Children: []rules.Node{
-					{Operator: rules.Eq, Field: "firstName", Value: "John"},
-					{Operator: rules.Eq, Field: "lastName", Value: "Doe"},
+			ruleNodes: Rule{
+				Operator: Or,
+				Children: []Rule{
+					{Operator: Eq, Field: "firstName", Value: "John"},
+					{Operator: Eq, Field: "lastName", Value: "Doe"},
 				},
 			},
 			inputData: map[string]interface{}{
 				"firstName": "Mustermann",
 				"lastName":  "Doe",
 			},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
 		},
 		{
-			ruleNodes: rules.Node{
-				Operator: rules.Not,
-				Children: []rules.Node{
-					{Operator: rules.Eq, Field: "firstName", Value: "John"},
+			ruleNodes: Rule{
+				Operator: Not,
+				Children: []Rule{
+					{Operator: Eq, Field: "firstName", Value: "John"},
 				},
 			},
 			inputData: map[string]interface{}{
 				"firstName": "Mustermann",
 			},
-			expResult: rules.NodeEvaluation{Result: true},
+			expResult: RuleResult{Result: true},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: And,
+				Children: []Rule{
+					{
+						Operator: And,
+						Field:    "user",
+						Children: []Rule{
+							{
+								Field:    "user.name",
+								Operator: LengthGt,
+								Value:    2,
+							},
+							{
+								Field:    "user.name",
+								Operator: LengthLt,
+								Value:    25,
+							},
+						},
+					},
+					{
+						Field:    "user.age",
+						Operator: Gte,
+						Value:    21,
+					},
+					{
+						Field:    "user.country",
+						Operator: Eq,
+						Value:    "DE",
+					},
+				},
+			},
+			inputData: map[string]interface{}{
+				"user": map[string]interface{}{
+					"name":    "Sam",
+					"age":     25,
+					"country": "DE",
+				},
+			},
+			expResult: RuleResult{Result: true},
 		},
 	}
 )
@@ -434,7 +474,7 @@ func TestEvaluate(t *testing.T) {
 					WithLogger(
 						func(
 							fieldName string,
-							operator rules.Operator,
+							operator Operator,
 							actual, expected interface{},
 						) {
 
@@ -448,24 +488,24 @@ func TestEvaluate(t *testing.T) {
 func TestEvaluateWithCustomFunc(t *testing.T) {
 	assert := assertion.New(t)
 
-	rules.RegisterFunc("isEmail", func(args ...interface{}) bool {
+	RegisterFunc("isEmail", func(args ...interface{}) (bool, any) {
 		dataEmail, ok := args[0].(string)
 		if !ok {
-			return false
+			return false, nil
 		}
 		passedEmail, ok := args[1].(string)
 		if !ok {
-			return false
+			return false, nil
 		}
 
 		return strings.Contains(dataEmail, "@") &&
 			strings.Contains(dataEmail, ".") &&
 			passedEmail == "floating.tester@domain.ext" &&
-			dataEmail == "some.email@domain.ext"
+			dataEmail == "some.email@domain.ext", nil
 	})
 
-	ruleNode := rules.Node{
-		Operator: rules.Custom,
+	ruleNode := Rule{
+		Operator: Custom,
 		Field:    "email",
 		Value:    []interface{}{"isEmail", "floating.tester@domain.ext"},
 	}
@@ -479,18 +519,18 @@ func TestEvaluateWithCustomFunc(t *testing.T) {
 }
 
 func BenchmarkEvaluate(b *testing.B) {
-	ruleNodes := rules.Node{
-		Operator: rules.And,
-		Children: []rules.Node{
-			{Operator: rules.IsNumber, Field: "user.age"},
-			{Operator: rules.Gte, Field: "user.age", Value: 25},
-			{Operator: rules.Matches, Field: "jobTitle", Value: "s([a-z]+)re"},
-			{Operator: rules.IsObject, Field: "user.address"},
-			{Operator: rules.Eq, Field: "user.address.zipCode", Value: 5},
-			{Operator: rules.IsNotNull, Field: "user.address.streetName"},
-			{Operator: rules.LengthGt, Field: "user.address.streetName", Value: 5},
-			{Operator: rules.LengthGt, Field: "user.firstName", Value: 2},
-			{Operator: rules.LengthGt, Field: "user.lastName", Value: 2},
+	ruleNodes := Rule{
+		Operator: And,
+		Children: []Rule{
+			{Operator: IsNumber, Field: "user.age"},
+			{Operator: Gte, Field: "user.age", Value: 25},
+			{Operator: Matches, Field: "jobTitle", Value: "s([a-z]+)re"},
+			{Operator: IsObject, Field: "user.address"},
+			{Operator: Eq, Field: "user.address.zipCode", Value: 5},
+			{Operator: IsNotNull, Field: "user.address.streetName"},
+			{Operator: LengthGt, Field: "user.address.streetName", Value: 5},
+			{Operator: LengthGt, Field: "user.firstName", Value: 2},
+			{Operator: LengthGt, Field: "user.lastName", Value: 2},
 		},
 	}
 	data := map[string]interface{}{

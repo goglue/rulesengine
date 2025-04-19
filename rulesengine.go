@@ -1,7 +1,6 @@
 package rulesengine
 
 import (
-	"github.com/goglue/rulesengine/rules"
 	"reflect"
 	"regexp"
 	"strings"
@@ -12,21 +11,23 @@ var (
 	reMatchMap = map[string]*regexp.Regexp{}
 )
 
+// Evaluate method executes the evaluation of the passed rule and all its
+// children, it returns [RuleResult] containing the rule evaluation results.
 func Evaluate(
-	node rules.Node, data map[string]interface{}, opts Options,
-) rules.NodeEvaluation {
+	node Rule, data map[string]any, opts Options,
+) RuleResult {
 	var now time.Time
 	if opts.Timing {
 		now = time.Now()
 	}
-	evaluation := rules.NodeEvaluation{
-		Node: rules.Node{
-			Operator: node.Operator, Field: node.Field, Value: data,
+	evaluation := RuleResult{
+		Rule: Rule{
+			Operator: node.Operator,
 		},
 	}
 
 	switch node.Operator {
-	case rules.And:
+	case And:
 		evaluation.Result = true
 		for _, child := range node.Children {
 			childEvaluation := Evaluate(child, data, opts)
@@ -39,7 +40,7 @@ func Evaluate(
 		}
 		return evaluation
 
-	case rules.Or:
+	case Or:
 		for _, child := range node.Children {
 			childEvaluation := Evaluate(child, data, opts)
 			evaluation.Children = append(evaluation.Children, childEvaluation)
@@ -51,7 +52,7 @@ func Evaluate(
 		}
 		return evaluation
 
-	case rules.Not:
+	case Not:
 		evaluation := Evaluate(node.Children[0], data, opts)
 		evaluation.Result = !evaluation.Result
 		if opts.Timing {
@@ -60,9 +61,9 @@ func Evaluate(
 		return evaluation
 
 	default:
-		evaluation.Node.Value = resolveField(node.Field, data)
-		evaluation.Result = evaluateRule(
-			node.Operator, evaluation.Node.Value, node.Value,
+		evaluation.Rule.Value = node.Value
+		evaluation.Result, evaluation.Mismatch = evaluateRule(
+			node.Operator, resolveField(node.Field, data), node.Value,
 		)
 		if opts.Timing {
 			evaluation.TimeTaken = time.Since(now)
@@ -72,11 +73,11 @@ func Evaluate(
 	}
 }
 
-func resolveField(path string, data map[string]interface{}) interface{} {
+func resolveField(path string, data map[string]any) any {
 	keys := strings.Split(path, ".")
-	var current interface{} = data
+	var current any = data
 	for _, key := range keys {
-		if m, ok := current.(map[string]interface{}); ok {
+		if m, ok := current.(map[string]any); ok {
 			current = m[key]
 		} else {
 			return nil
@@ -85,101 +86,191 @@ func resolveField(path string, data map[string]interface{}) interface{} {
 	return current
 }
 
-func evaluateRule(operator rules.Operator, actual, expected interface{}) bool {
+func evaluateRule(operator Operator, actual, expected any) (bool, any) {
 	switch operator {
 	// ---------- Equality ----------
-	case rules.Eq:
-		return compareEqual(actual, expected)
-	case rules.Neq:
-		return !compareEqual(actual, expected)
+	case Eq:
+		if !compareEqual(actual, expected) {
+			return false, actual
+		}
+		return true, nil
+
+	case Neq:
+		if compareEqual(actual, expected) {
+			return false, actual
+		}
+		return true, nil
 
 	// ---------- Numeric ----------
-	case rules.Gt, rules.Gte, rules.Lt, rules.Lte:
-		return compareNumeric(actual, expected, operator)
-	case rules.Between:
-		return isBetween(actual, expected)
-	case rules.In:
-		return inList(actual, expected)
-	case rules.NotIn:
-		return !inList(actual, expected)
+	case Gt, Gte, Lt, Lte:
+		if !compareNumeric(actual, expected, operator) {
+			return false, actual
+		}
+		return true, nil
+
+	case Between:
+		if !isBetween(actual, expected) {
+			return false, actual
+		}
+		return true, nil
+
+	case In:
+		if !inList(actual, expected) {
+			return false, actual
+		}
+		return true, nil
+
+	case NotIn:
+		if inList(actual, expected) {
+			return false, actual
+		}
+		return true, nil
 
 	// ---------- String ----------
-	case rules.Contains:
-		return strings.Contains(toString(actual), toString(expected))
-	case rules.NotContains:
-		return !strings.Contains(toString(actual), toString(expected))
-	case rules.StartsWith:
-		return strings.HasPrefix(toString(actual), toString(expected))
-	case rules.EndsWith:
-		return strings.HasSuffix(toString(actual), toString(expected))
-	case rules.Matches:
+	case Contains:
+		if !strings.Contains(toString(actual), toString(expected)) {
+			return false, actual
+		}
+		return true, nil
+
+	case NotContains:
+		if strings.Contains(toString(actual), toString(expected)) {
+			return false, actual
+		}
+		return true, nil
+
+	case StartsWith:
+		if !strings.HasPrefix(toString(actual), toString(expected)) {
+			return false, actual
+		}
+		return true, nil
+
+	case EndsWith:
+		if !strings.HasSuffix(toString(actual), toString(expected)) {
+			return false, actual
+		}
+		return true, nil
+
+	case Matches:
 		templateName := toString(expected)
 		re, ok := reMatchMap[templateName]
 		if !ok {
 			re = regexp.MustCompile(templateName)
 			reMatchMap[templateName] = re
 		}
+		if !re.MatchString(toString(actual)) {
+			return false, actual
+		}
+		return true, nil
 
-		return re.MatchString(toString(actual))
-	case rules.LengthEq, rules.LengthGt, rules.LengthLt:
-		return compareLength(actual, expected, operator)
+	case LengthEq, LengthGt, LengthLt:
+		if !compareLength(actual, expected, operator) {
+			return false, actual
+		}
+		return true, nil
 
 	// ---------- Boolean ----------
-	case rules.IsTrue:
-		return actual == true
-	case rules.IsFalse:
-		return actual == false
+	case IsTrue:
+		if actual != true {
+			return false, actual
+		}
+		return true, nil
+
+	case IsFalse:
+		if actual != false {
+			return false, actual
+		}
+		return true, nil
 
 	// ---------- Date ----------
-	case rules.Before, rules.After:
-		return compareTime(actual, expected, operator)
-	case rules.DateBetween:
-		return isTimeBetween(actual, expected)
-	case rules.WithinLast, rules.WithinNext:
-		return isWithinTime(actual, expected, operator)
+	case Before, After:
+		if !compareTime(actual, expected, operator) {
+			return false, actual
+		}
+		return true, nil
+
+	case DateBetween:
+		if !isTimeBetween(actual, expected) {
+			return false, actual
+		}
+		return true, nil
+
+	case WithinLast, WithinNext:
+		if !isWithinTime(actual, expected, operator) {
+			return false, actual
+		}
+		return true, nil
 
 	// ---------- Null / Existence ----------
-	case rules.IsNull, rules.NotExists:
-		return actual == nil
-	case rules.IsNotNull, rules.Exists:
-		return actual != nil
+	case IsNull, NotExists:
+		if actual != nil {
+			return false, actual
+		}
+		return true, nil
+
+	case IsNotNull, Exists:
+		if actual == nil {
+			return false, actual
+		}
+		return true, nil
 
 	// ---------- Type Checks ----------
-	case rules.IsString:
+	case IsString:
 		_, ok := actual.(string)
-		return ok
-	case rules.IsNumber:
-		return isNumeric(actual)
-	case rules.IsBool:
-		_, ok := actual.(bool)
-		return ok
-	case rules.IsList:
-		return reflect.TypeOf(actual).Kind() == reflect.Slice
-	case rules.IsObject:
-		return reflect.TypeOf(actual).Kind() == reflect.Map ||
-			reflect.TypeOf(actual).Kind() == reflect.Struct
-	case rules.IsDate:
-		_, ok := actual.(time.Time)
-		return ok
+		if !ok {
+			return false, actual
+		}
+		return true, nil
+
+	case IsNumber:
+		if !isNumeric(actual) {
+			return false, actual
+		}
+		return true, nil
+
+	case IsBool:
+		if _, ok := actual.(bool); !ok {
+			return false, actual
+		}
+		return true, nil
+
+	case IsList:
+		if reflect.TypeOf(actual).Kind() != reflect.Slice {
+			return false, actual
+		}
+		return true, nil
+
+	case IsObject:
+		if reflect.TypeOf(actual).Kind() != reflect.Map &&
+			reflect.TypeOf(actual).Kind() != reflect.Struct {
+			return false, actual
+		}
+		return true, nil
+
+	case IsDate:
+		if _, ok := actual.(time.Time); !ok {
+			return false, actual
+		}
+		return true, nil
 
 	// ---------- Custom Checks ----------
-	case rules.Custom:
-		argsList, ok := expected.([]interface{})
+	case Custom:
+		argsList, ok := expected.([]any)
 		if !ok || len(argsList) == 0 {
-			return false
+			return false, nil
 		}
 		fnName, ok := argsList[0].(string)
 		if !ok {
-			return false
+			return false, nil
 		}
-		fn, found := rules.GetFunc(fnName)
+		fn, found := GetFunc(fnName)
 		if !found {
-			return false
+			return false, nil
 		}
 
-		return fn(append([]interface{}{actual}, argsList[1:]...)...)
+		return fn(append([]any{actual}, argsList[1:]...)...)
 
 	default:
-		return false
+		return false, nil
 	}
 }
