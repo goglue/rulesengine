@@ -471,6 +471,72 @@ var (
 			},
 			expResult: RuleResult{Result: false, Error: newError("invalid numerical value", "Ali")},
 		},
+		{
+			ruleNodes: Rule{
+				Operator: All,
+				Field:    "roles",
+				Value:    Rule{Operator: LengthGt, Value: 3},
+			},
+			inputData: map[string]interface{}{
+				"roles": []string{"test", "roles", "longer", "than", "three"},
+			},
+			expResult: RuleResult{Result: true},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: All,
+				Field:    "roles",
+				Value:    Rule{Operator: LengthGt, Value: 5},
+			},
+			inputData: map[string]interface{}{
+				"roles": []string{"test", "roles", "longer", "than", "three"},
+			},
+			expResult: RuleResult{Result: false},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: Any,
+				Field:    "roles",
+				Value:    Rule{Operator: LengthGt, Value: 5},
+			},
+			inputData: map[string]interface{}{
+				"roles": []string{"test", "roles", "longer", "than", "three"},
+			},
+			expResult: RuleResult{Result: true},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: Any,
+				Field:    "roles",
+				Value:    Rule{Operator: LengthGt, Value: 10},
+			},
+			inputData: map[string]interface{}{
+				"roles": []string{"test", "roles", "longer", "than", "three"},
+			},
+			expResult: RuleResult{Result: false},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: None,
+				Field:    "roles",
+				Value:    Rule{Operator: LengthGt, Value: 10},
+			},
+			inputData: map[string]interface{}{
+				"roles": []string{"test", "roles", "longer", "than", "three"},
+			},
+			expResult: RuleResult{Result: true},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: None,
+				Field:    "roles",
+				Value:    Rule{Operator: LengthGt, Value: 5},
+			},
+			inputData: map[string]interface{}{
+				"roles": []string{"test", "roles", "longer", "than", "three"},
+			},
+			expResult: RuleResult{Result: false},
+		},
 	}
 )
 
@@ -544,7 +610,7 @@ func BenchmarkEvaluate(b *testing.B) {
 		Children: []Rule{
 			{Operator: IsNumber, Field: "user.age"},
 			{Operator: Gte, Field: "user.age", Value: 25},
-			{Operator: Matches, Field: "jobTitle", Value: "s([a-z]+)re"},
+			{Operator: Matches, Field: "user.jobTitle", Value: "s([a-z]+)re"},
 			{Operator: IsObject, Field: "user.address"},
 			{Operator: Eq, Field: "user.address.zipCode", Value: 5},
 			{Operator: IsNotNull, Field: "user.address.streetName"},
