@@ -130,7 +130,11 @@ func compareLength(val interface{}, target interface{}, op Operator) (bool, erro
 	case []interface{}:
 		length = len(v)
 	default:
-		return false, newError(errType, val)
+		arr, ok := toInterfaceSlice(val)
+		if !ok {
+			return false, newError(errType, target)
+		}
+		length = len(arr)
 	}
 	floatVal, err := toFloat(target)
 	if nil != err {
