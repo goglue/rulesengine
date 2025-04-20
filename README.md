@@ -2,7 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/goglue/rulesengine.svg)](https://pkg.go.dev/github.com/goglue/rulesengine)
 ![Build Status](https://github.com/goglue/rulesengine/actions/workflows/pulls-pipeline.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/Coverage-84.8%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-80.9%25-brightgreen)
 
 A flexible and extensible rules engine written in Go. Use it to define
 conditional logic in structured, declarative form and evaluate it dynamically
