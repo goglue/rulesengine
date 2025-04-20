@@ -22,7 +22,7 @@ func Evaluate(
 	}
 	evaluation := RuleResult{
 		Rule: Rule{
-			Operator: node.Operator,
+			Operator: node.Operator, Field: node.Field,
 		},
 	}
 
@@ -40,21 +40,49 @@ func Evaluate(
 		}
 		return evaluation
 
-	case Or:
+	case Or, Not:
 		for _, child := range node.Children {
 			childEvaluation := Evaluate(child, data, opts)
 			evaluation.Children = append(evaluation.Children, childEvaluation)
 			evaluation.Result = childEvaluation.Result || evaluation.Result
 		}
-
+		if node.Operator == Not {
+			evaluation.Result = !evaluation.Result
+		}
 		if opts.Timing {
 			evaluation.TimeTaken = time.Since(now)
 		}
 		return evaluation
 
-	case Not:
-		evaluation := Evaluate(node.Children[0], data, opts)
-		evaluation.Result = !evaluation.Result
+	case Any, All, None:
+		arr, ok := toInterfaceSlice(resolveField(node.Field, data))
+		if !ok {
+			// todo: return error
+		}
+		ruleVal, ok := node.Value.(Rule)
+		if !ok {
+			// todo: return error
+		}
+
+		dataLen := len(arr)
+		var passCount int
+		for _, elem := range arr {
+			res := Evaluate(ruleVal, map[string]any{"": elem}, opts)
+			evaluation.Children = append(evaluation.Children, res)
+			if res.Result {
+				passCount++
+			}
+		}
+
+		switch node.Operator {
+		case Any:
+			evaluation.Result = passCount > 0
+		case All:
+			evaluation.Result = passCount == dataLen
+		case None:
+			evaluation.Result = passCount == 0
+		}
+
 		if opts.Timing {
 			evaluation.TimeTaken = time.Since(now)
 		}

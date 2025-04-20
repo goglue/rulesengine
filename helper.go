@@ -198,3 +198,116 @@ func isWithinTime(val interface{}, duration interface{}, op Operator) (bool, err
 	}
 	return false, nil
 }
+
+func toInterfaceSlice(input interface{}) ([]interface{}, bool) {
+	switch v := input.(type) {
+	case []interface{}:
+		return v, true
+	case []string:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+	case []bool:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+
+	// Signed ints
+	case []int:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+	case []int8:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+	case []int16:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+	case []int32:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+	case []int64:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+
+	// Unsigned ints
+	case []uint:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+	case []uint8:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+	case []uint16:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+	case []uint32:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+	case []uint64:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+
+	// Floating point
+	case []float32:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+	case []float64:
+		out := make([]interface{}, len(v))
+		for i, val := range v {
+			out[i] = val
+		}
+		return out, true
+
+	default:
+		// Fallback using reflect for custom types
+		return toInterfaceSliceReflect(input)
+	}
+}
+
+func toInterfaceSliceReflect(input interface{}) ([]interface{}, bool) {
+	val := reflect.ValueOf(input)
+	if val.Kind() != reflect.Slice {
+		return nil, false
+	}
+	result := make([]interface{}, val.Len())
+	for i := 0; i < val.Len(); i++ {
+		result[i] = val.Index(i).Interface()
+	}
+	return result, true
+}
