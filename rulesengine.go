@@ -57,11 +57,15 @@ func Evaluate(
 	case Any, All, None:
 		arr, ok := toInterfaceSlice(resolveField(node.Field, data))
 		if !ok {
-			// todo: return error
+			evaluation.Result = false
+			evaluation.Error = newError(errType, node.Field)
+			return evaluation
 		}
 		ruleVal, ok := node.Value.(Rule)
 		if !ok {
-			// todo: return error
+			evaluation.Result = false
+			evaluation.Error = newError(errType, node.Value)
+			return evaluation
 		}
 
 		dataLen := len(arr)
