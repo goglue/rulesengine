@@ -537,6 +537,37 @@ var (
 			},
 			expResult: RuleResult{Result: false},
 		},
+		{
+			ruleNodes: Rule{
+				Operator: All,
+				Field:    "roles",
+				Value: Rule{
+					Operator: And,
+					Children: []Rule{
+						{
+							Operator: LengthGt,
+							Value:    1,
+						},
+						{
+							Operator: LengthLt,
+							Value:    10,
+						},
+						{
+							Operator: Neq,
+							Value:    "admin",
+						},
+						{
+							Operator: In,
+							Value:    []string{"test", "roles", "longer", "than", "three"},
+						},
+					},
+				},
+			},
+			inputData: map[string]interface{}{
+				"roles": []string{"test", "roles", "longer", "than", "three"},
+			},
+			expResult: RuleResult{Result: true},
+		},
 	}
 )
 

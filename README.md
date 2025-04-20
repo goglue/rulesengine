@@ -118,6 +118,8 @@ func main() {
 }
 ```
 
+For more examples, check the [test](https://github.com/goglue/rulesengine/blob/main/rulesengine_test.go) file.
+
 ## 📄 License
 
 This project is licensed under the MIT License. See
