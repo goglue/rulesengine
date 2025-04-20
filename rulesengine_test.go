@@ -1,6 +1,7 @@
 package rulesengine
 
 import (
+	"fmt"
 	assertion "github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
@@ -459,12 +460,27 @@ var (
 			},
 			expResult: RuleResult{Result: true},
 		},
+		{
+			ruleNodes: Rule{
+				Operator: Gt,
+				Field:    "firstName",
+				Value:    100,
+			},
+			inputData: map[string]interface{}{
+				"firstName": "Ali",
+			},
+			expResult: RuleResult{Result: false, Error: newError("invalid numerical value", "Ali")},
+		},
 	}
 )
 
 func TestEvaluate(t *testing.T) {
 	for _, testCase := range testData {
-		t.Run("", func(t *testing.T) {
+		t.Run(fmt.Sprintf(
+			"%s_%v",
+			testCase.ruleNodes.Operator,
+			testCase.expResult.Result,
+		), func(t *testing.T) {
 			assert := assertion.New(t)
 			result := Evaluate(
 				testCase.ruleNodes,
@@ -481,6 +497,10 @@ func TestEvaluate(t *testing.T) {
 						}),
 			)
 			assert.Equal(testCase.expResult.Result, result.Result)
+			assert.Equal(testCase.expResult.Error, result.Error)
+			if testCase.expResult.Error != nil {
+				assert.Equal(testCase.expResult.Error.Error(), result.Error.Error())
+			}
 		})
 	}
 }
@@ -488,20 +508,20 @@ func TestEvaluate(t *testing.T) {
 func TestEvaluateWithCustomFunc(t *testing.T) {
 	assert := assertion.New(t)
 
-	RegisterFunc("isEmail", func(args ...interface{}) (bool, any) {
+	RegisterFunc("isEmail", func(args ...interface{}) (bool, any, error) {
 		dataEmail, ok := args[0].(string)
 		if !ok {
-			return false, nil
+			return false, nil, nil
 		}
 		passedEmail, ok := args[1].(string)
 		if !ok {
-			return false, nil
+			return false, nil, nil
 		}
 
 		return strings.Contains(dataEmail, "@") &&
 			strings.Contains(dataEmail, ".") &&
 			passedEmail == "floating.tester@domain.ext" &&
-			dataEmail == "some.email@domain.ext", nil
+			dataEmail == "some.email@domain.ext", nil, nil
 	})
 
 	ruleNode := Rule{

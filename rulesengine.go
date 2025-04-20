@@ -62,7 +62,7 @@ func Evaluate(
 
 	default:
 		evaluation.Rule.Value = node.Value
-		evaluation.Result, evaluation.Mismatch = evaluateRule(
+		evaluation.Result, evaluation.Mismatch, evaluation.Error = evaluateRule(
 			node.Operator, resolveField(node.Field, data), node.Value,
 		)
 		if opts.Timing {
@@ -86,70 +86,72 @@ func resolveField(path string, data map[string]any) any {
 	return current
 }
 
-func evaluateRule(operator Operator, actual, expected any) (bool, any) {
+func evaluateRule(operator Operator, actual, expected any) (bool, any, error) {
 	switch operator {
 	// ---------- Equality ----------
 	case Eq:
 		if !compareEqual(actual, expected) {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	case Neq:
 		if compareEqual(actual, expected) {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	// ---------- Numeric ----------
 	case Gt, Gte, Lt, Lte:
-		if !compareNumeric(actual, expected, operator) {
-			return false, actual
+		if res, err := compareNumeric(actual, expected, operator); !res || err != nil {
+			return res, actual, err
 		}
-		return true, nil
+		return true, nil, nil
 
 	case Between:
-		if !isBetween(actual, expected) {
-			return false, actual
+		if res, err := isBetween(actual, expected); !res || err != nil {
+			return res, actual, err
 		}
-		return true, nil
+		return true, nil, nil
 
 	case In:
-		if !inList(actual, expected) {
-			return false, actual
+		if res, err := inList(actual, expected); !res || err != nil {
+			return res, actual, err
 		}
-		return true, nil
+		return true, nil, nil
 
 	case NotIn:
-		if inList(actual, expected) {
-			return false, actual
+		if res, err := inList(actual, expected); err != nil {
+			return false, nil, err
+		} else if res {
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	// ---------- String ----------
 	case Contains:
 		if !strings.Contains(toString(actual), toString(expected)) {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	case NotContains:
 		if strings.Contains(toString(actual), toString(expected)) {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	case StartsWith:
 		if !strings.HasPrefix(toString(actual), toString(expected)) {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	case EndsWith:
 		if !strings.HasSuffix(toString(actual), toString(expected)) {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	case Matches:
 		templateName := toString(expected)
@@ -159,118 +161,118 @@ func evaluateRule(operator Operator, actual, expected any) (bool, any) {
 			reMatchMap[templateName] = re
 		}
 		if !re.MatchString(toString(actual)) {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	case LengthEq, LengthGt, LengthLt:
-		if !compareLength(actual, expected, operator) {
-			return false, actual
+		if res, err := compareLength(actual, expected, operator); !res || err != nil {
+			return res, actual, err
 		}
-		return true, nil
+		return true, nil, nil
 
 	// ---------- Boolean ----------
 	case IsTrue:
 		if actual != true {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	case IsFalse:
 		if actual != false {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	// ---------- Date ----------
 	case Before, After:
-		if !compareTime(actual, expected, operator) {
-			return false, actual
+		if res, err := compareTime(actual, expected, operator); !res || err != nil {
+			return res, actual, err
 		}
-		return true, nil
+		return true, nil, nil
 
 	case DateBetween:
-		if !isTimeBetween(actual, expected) {
-			return false, actual
+		if res, err := isTimeBetween(actual, expected); !res || err != nil {
+			return res, actual, err
 		}
-		return true, nil
+		return true, nil, nil
 
 	case WithinLast, WithinNext:
-		if !isWithinTime(actual, expected, operator) {
-			return false, actual
+		if res, err := isWithinTime(actual, expected, operator); !res || err != nil {
+			return res, actual, err
 		}
-		return true, nil
+		return true, nil, nil
 
 	// ---------- Null / Existence ----------
 	case IsNull, NotExists:
 		if actual != nil {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	case IsNotNull, Exists:
 		if actual == nil {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	// ---------- Type Checks ----------
 	case IsString:
 		_, ok := actual.(string)
 		if !ok {
-			return false, actual
+			return false, actual, newError(errType, actual)
 		}
-		return true, nil
+		return true, nil, nil
 
 	case IsNumber:
 		if !isNumeric(actual) {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	case IsBool:
 		if _, ok := actual.(bool); !ok {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	case IsList:
 		if reflect.TypeOf(actual).Kind() != reflect.Slice {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	case IsObject:
 		if reflect.TypeOf(actual).Kind() != reflect.Map &&
 			reflect.TypeOf(actual).Kind() != reflect.Struct {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	case IsDate:
 		if _, ok := actual.(time.Time); !ok {
-			return false, actual
+			return false, actual, nil
 		}
-		return true, nil
+		return true, nil, nil
 
 	// ---------- Custom Checks ----------
 	case Custom:
 		argsList, ok := expected.([]any)
 		if !ok || len(argsList) == 0 {
-			return false, nil
+			return false, nil, newError(errType, expected)
 		}
 		fnName, ok := argsList[0].(string)
 		if !ok {
-			return false, nil
+			return false, nil, newError(errType, expected)
 		}
 		fn, found := GetFunc(fnName)
 		if !found {
-			return false, nil
+			return false, nil, newError(errType, "function not registered")
 		}
 
 		return fn(append([]any{actual}, argsList[1:]...)...)
 
 	default:
-		return false, nil
+		return false, nil, newError(errOperator, operator)
 	}
 }
