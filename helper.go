@@ -30,64 +30,99 @@ func isNumeric(v interface{}) bool {
 	return false
 }
 
-func toFloat(v interface{}) float64 {
+func toFloat(v interface{}) (float64, error) {
 	switch val := v.(type) {
 	case int:
-		return float64(val)
+		return float64(val), nil
+	case int8:
+		return float64(val), nil
+	case int16:
+		return float64(val), nil
+	case int32:
+		return float64(val), nil
 	case int64:
-		return float64(val)
+		return float64(val), nil
+	case uint:
+		return float64(val), nil
+	case uint8:
+		return float64(val), nil
+	case uint16:
+		return float64(val), nil
+	case uint32:
+		return float64(val), nil
+	case uint64:
+		return float64(val), nil
 	case float64:
-		return val
+		return val, nil
 	case float32:
-		return float64(val)
+		return float64(val), nil
 	case string:
-		f, _ := strconv.ParseFloat(val, 64)
-		return f
+		f, err := strconv.ParseFloat(val, 64)
+		if nil != err {
+			return 0, newError(errNumeric, val)
+		}
+		return f, nil
 	}
-	return 0
+
+	return 0, newError(errNumeric, v)
 }
 
-func compareNumeric(a, b interface{}, op Operator) bool {
-	af := toFloat(a)
-	bf := toFloat(b)
+func compareNumeric(a, b interface{}, op Operator) (bool, error) {
+	af, err := toFloat(a)
+	if err != nil {
+		return false, err
+	}
+	bf, err := toFloat(b)
+	if err != nil {
+		return false, err
+	}
 	switch op {
 	case Gt:
-		return af > bf
+		return af > bf, nil
 	case Gte:
-		return af >= bf
+		return af >= bf, nil
 	case Lt:
-		return af < bf
+		return af < bf, nil
 	case Lte:
-		return af <= bf
+		return af <= bf, nil
 	}
-	return false
+	return false, nil
 }
 
-func inList(value interface{}, list interface{}) bool {
+func inList(value interface{}, list interface{}) (bool, error) {
 	l := reflect.ValueOf(list)
 	if l.Kind() != reflect.Slice {
-		return false
+		return false, newError(errType, l.Kind())
 	}
 	for i := 0; i < l.Len(); i++ {
 		if compareEqual(value, l.Index(i).Interface()) {
-			return true
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
-func isBetween(val, rangeVal interface{}) bool {
+func isBetween(val, rangeVal interface{}) (bool, error) {
 	vals, ok := rangeVal.([]interface{})
 	if !ok || len(vals) != 2 {
-		return false
+		return false, newError(errType, rangeVal)
 	}
-	v := toFloat(val)
-	min := toFloat(vals[0])
-	max := toFloat(vals[1])
-	return v >= min && v <= max
+	v, err := toFloat(val)
+	if err != nil {
+		return false, err
+	}
+	min, err := toFloat(vals[0])
+	if err != nil {
+		return false, err
+	}
+	max, err := toFloat(vals[1])
+	if err != nil {
+		return false, err
+	}
+	return v >= min && v <= max, nil
 }
 
-func compareLength(val interface{}, target interface{}, op Operator) bool {
+func compareLength(val interface{}, target interface{}, op Operator) (bool, error) {
 	length := 0
 	switch v := val.(type) {
 	case string:
@@ -95,63 +130,71 @@ func compareLength(val interface{}, target interface{}, op Operator) bool {
 	case []interface{}:
 		length = len(v)
 	default:
-		return false
+		return false, newError(errType, val)
 	}
-	expected := int(toFloat(target))
+	floatVal, err := toFloat(target)
+	if nil != err {
+		return false, err
+	}
+	expected := int(floatVal)
 	switch op {
 	case LengthEq:
-		return length == expected
+		return length == expected, nil
 	case LengthGt:
-		return length > expected
+		return length > expected, nil
 	case LengthLt:
-		return length < expected
+		return length < expected, nil
 	}
-	return false
+	return false, nil
 }
 
-func compareTime(a, b interface{}, op Operator) bool {
+func compareTime(a, b interface{}, op Operator) (bool, error) {
 	at, aok := a.(time.Time)
+	if !aok {
+		return false, newError(errType, a)
+	}
 	bt, bok := b.(time.Time)
-	if !aok || !bok {
-		return false
+	if !bok {
+		return false, newError(errType, b)
 	}
 	switch op {
 	case Before:
-		return at.Before(bt)
+		return at.Before(bt), nil
 	case After:
-		return at.After(bt)
+		return at.After(bt), nil
 	}
-	return false
+	return false, nil
 }
 
-func isTimeBetween(val interface{}, rangeVal interface{}) bool {
+func isTimeBetween(val interface{}, rangeVal interface{}) (bool, error) {
 	v, ok := val.(time.Time)
 	if !ok {
-		return false
+		return false, newError(errType, val)
 	}
 	r, ok := rangeVal.([]time.Time)
 	if !ok || len(r) != 2 {
-		return false
+		return false, newError(errType, rangeVal)
 	}
-	return (v.After(r[0]) || v.Equal(r[0])) && (v.Before(r[1]) || v.Equal(r[1]))
+	return (v.After(r[0]) || v.Equal(r[0])) &&
+		(v.Before(r[1]) || v.Equal(r[1])), nil
 }
 
-func isWithinTime(val interface{}, duration interface{}, op Operator) bool {
+func isWithinTime(val interface{}, duration interface{}, op Operator) (bool, error) {
 	t, ok := val.(time.Time)
 	if !ok {
-		return false
+		return false, newError(errType, val)
 	}
 	dur, ok := duration.(time.Duration)
 	if !ok {
-		return false
+		return false, newError(errType, duration)
 	}
 
 	now := time.Now()
 	switch op {
 	case WithinLast:
-		return t.After(now.Add(-dur))
+		return t.After(now.Add(-dur)), nil
 	case WithinNext:
-		return t.Before(now.Add(dur))
+		return t.Before(now.Add(dur)), nil
 	}
-	return false
+	return false, nil
 }

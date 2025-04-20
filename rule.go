@@ -31,5 +31,10 @@ type (
 		// TimeTaken is a debugging attribute and holds the duration of the
 		// rule evaluation.
 		TimeTaken time.Duration `json:"timeTaken,omitempty"`
+		// Error attribute contains an error occurred during the evaluation of a
+		// rule, this can be any of the errors defined in the library. The error
+		// entails that the evaluation did not finish successfully. The
+		// underlying type is [Error].
+		Error error `json:"error,omitempty"`
 	}
 )
