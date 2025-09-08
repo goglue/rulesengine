@@ -23,6 +23,7 @@ const (
 	Between Operator = "BETWEEN"
 	In      Operator = "IN"
 	NotIn   Operator = "NOT_IN"
+	AnyIn   Operator = "ANY_IN"
 
 	// String
 	Contains    Operator = "CONTAINS"

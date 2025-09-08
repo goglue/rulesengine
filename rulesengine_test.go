@@ -2,10 +2,11 @@ package rulesengine
 
 import (
 	"fmt"
-	assertion "github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 	"time"
+
+	assertion "github.com/stretchr/testify/assert"
 )
 
 var (
@@ -119,6 +120,41 @@ var (
 			},
 			inputData: map[string]interface{}{"role": "manager"},
 			expResult: RuleResult{Result: false},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: AnyIn, Field: "roles", Value: []interface{}{"admin", "manager"},
+			},
+			inputData: map[string]interface{}{"roles": []interface{}{"editor", "admin"}},
+			expResult: RuleResult{Result: true},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: AnyIn, Field: "roles", Value: []interface{}{"admin", "manager"},
+			},
+			inputData: map[string]interface{}{"roles": []interface{}{"editor", "dev"}},
+			expResult: RuleResult{Result: false},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: AnyIn, Field: "nums", Value: []int{1, 2},
+			},
+			inputData: map[string]interface{}{"nums": []int{1, 3}},
+			expResult: RuleResult{Result: true},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: AnyIn, Field: "nums", Value: []interface{}{1, 2},
+			},
+			inputData: map[string]interface{}{"nums": []int{1, 3}},
+			expResult: RuleResult{Result: true},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: AnyIn, Field: "nums", Value: []int{1, 2},
+			},
+			inputData: map[string]interface{}{"nums": []interface{}{1, 3}},
+			expResult: RuleResult{Result: true},
 		},
 		{
 			ruleNodes: Rule{
@@ -590,7 +626,6 @@ func TestEvaluate(t *testing.T) {
 							operator Operator,
 							actual, expected interface{},
 						) {
-
 						}),
 			)
 			assert.Equal(testCase.expResult.Result, result.Result)

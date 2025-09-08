@@ -7,9 +7,7 @@ import (
 	"time"
 )
 
-var (
-	reMatchMap = map[string]*regexp.Regexp{}
-)
+var reMatchMap = map[string]*regexp.Regexp{}
 
 // Evaluate method executes the evaluation of the passed rule and all its
 // children, it returns [RuleResult] containing the rule evaluation results.
@@ -157,6 +155,12 @@ func evaluateRule(operator Operator, actual, expected any) (bool, any, error) {
 			return false, nil, err
 		} else if res {
 			return false, actual, nil
+		}
+		return true, nil, nil
+
+	case AnyIn:
+		if res, err := anyInList(actual, expected); !res || err != nil {
+			return res, actual, err
 		}
 		return true, nil, nil
 

@@ -34,6 +34,7 @@ go get github.com/goglue/rulesengine
 | Between     | Numeric                 | Checks if a field is between the specified range.                                    |
 | In          | (Scalar types)          | Checks if field is in a specified list.                                              |
 | NotIn       | (Scalar types)          | Checks if field is not in a specified list.                                          |
+| AnyIn       | (Scalar types)          | Checks if any of field's values is in a specified list. Field should be array                                          |
 | Contains    | String                  | Checks if a field contains a specified `string`.                                     |
 | NotContains | String                  | Checks if a field does not contain a specified `string`.                             |
 | StartsWith  | String                  | Checks if a field starts with a `string`.                                            |

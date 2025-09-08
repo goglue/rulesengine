@@ -102,6 +102,31 @@ func inList(value interface{}, list interface{}) (bool, error) {
 	return false, nil
 }
 
+func anyInList(actual interface{}, list interface{}) (bool, error) {
+	l := reflect.ValueOf(list)
+	if l.Kind() != reflect.Slice {
+		return false, newError(errType, l.Kind())
+	}
+
+	m := make(map[any]struct{}, l.Len())
+	for i := 0; i < l.Len(); i++ {
+		m[l.Index(i).Interface()] = struct{}{}
+	}
+
+	in := reflect.ValueOf(actual)
+	if in.Kind() != reflect.Slice {
+		return false, newError(errType, in.Kind())
+	}
+
+	for i := 0; i < in.Len(); i++ {
+		if _, ok := m[in.Index(i).Interface()]; ok {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func isBetween(val, rangeVal interface{}) (bool, error) {
 	vals, ok := rangeVal.([]interface{})
 	if !ok || len(vals) != 2 {
