@@ -106,8 +106,8 @@ func main() {
         },
     }
 
-    data := map[string]interface{}{
-        "user": map[string]interface{}{
+    data := map[string]any{
+        "user": map[string]any{
             "name":    "Test",
             "age":     25,
             "country": "DE",

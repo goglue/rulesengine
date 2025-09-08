@@ -7,11 +7,11 @@ import (
 	"time"
 )
 
-func compareEqual(a, b interface{}) bool {
+func compareEqual(a, b any) bool {
 	return a == b
 }
 
-func toString(v interface{}) string {
+func toString(v any) string {
 	switch s := v.(type) {
 	case string:
 		return s
@@ -22,7 +22,7 @@ func toString(v interface{}) string {
 	}
 }
 
-func isNumeric(v interface{}) bool {
+func isNumeric(v any) bool {
 	switch v.(type) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float64, float32:
 		return true
@@ -30,7 +30,7 @@ func isNumeric(v interface{}) bool {
 	return false
 }
 
-func toFloat(v interface{}) (float64, error) {
+func toFloat(v any) (float64, error) {
 	switch val := v.(type) {
 	case int:
 		return float64(val), nil
@@ -67,7 +67,7 @@ func toFloat(v interface{}) (float64, error) {
 	return 0, newError(errNumeric, v)
 }
 
-func compareNumeric(a, b interface{}, op Operator) (bool, error) {
+func compareNumeric(a, b any, op Operator) (bool, error) {
 	af, err := toFloat(a)
 	if err != nil {
 		return false, err
@@ -89,7 +89,7 @@ func compareNumeric(a, b interface{}, op Operator) (bool, error) {
 	return false, nil
 }
 
-func inList(value interface{}, list interface{}) (bool, error) {
+func inList(value any, list any) (bool, error) {
 	l := reflect.ValueOf(list)
 	if l.Kind() != reflect.Slice {
 		return false, newError(errType, l.Kind())
@@ -102,7 +102,7 @@ func inList(value interface{}, list interface{}) (bool, error) {
 	return false, nil
 }
 
-func anyInList(actual interface{}, list interface{}) (bool, error) {
+func anyInList(actual any, list any) (bool, error) {
 	l := reflect.ValueOf(list)
 	if l.Kind() != reflect.Slice {
 		return false, newError(errType, l.Kind())
@@ -127,8 +127,8 @@ func anyInList(actual interface{}, list interface{}) (bool, error) {
 	return false, nil
 }
 
-func isBetween(val, rangeVal interface{}) (bool, error) {
-	vals, ok := rangeVal.([]interface{})
+func isBetween(val, rangeVal any) (bool, error) {
+	vals, ok := rangeVal.([]any)
 	if !ok || len(vals) != 2 {
 		return false, newError(errType, rangeVal)
 	}
@@ -147,12 +147,12 @@ func isBetween(val, rangeVal interface{}) (bool, error) {
 	return v >= min && v <= max, nil
 }
 
-func compareLength(val interface{}, target interface{}, op Operator) (bool, error) {
+func compareLength(val any, target any, op Operator) (bool, error) {
 	length := 0
 	switch v := val.(type) {
 	case string:
 		length = len(v)
-	case []interface{}:
+	case []any:
 		length = len(v)
 	default:
 		arr, ok := toInterfaceSlice(val)
@@ -177,7 +177,7 @@ func compareLength(val interface{}, target interface{}, op Operator) (bool, erro
 	return false, nil
 }
 
-func compareTime(a, b interface{}, op Operator) (bool, error) {
+func compareTime(a, b any, op Operator) (bool, error) {
 	at, aok := a.(time.Time)
 	if !aok {
 		return false, newError(errType, a)
@@ -195,7 +195,7 @@ func compareTime(a, b interface{}, op Operator) (bool, error) {
 	return false, nil
 }
 
-func isTimeBetween(val interface{}, rangeVal interface{}) (bool, error) {
+func isTimeBetween(val any, rangeVal any) (bool, error) {
 	v, ok := val.(time.Time)
 	if !ok {
 		return false, newError(errType, val)
@@ -208,7 +208,7 @@ func isTimeBetween(val interface{}, rangeVal interface{}) (bool, error) {
 		(v.Before(r[1]) || v.Equal(r[1])), nil
 }
 
-func isWithinTime(val interface{}, duration interface{}, op Operator) (bool, error) {
+func isWithinTime(val any, duration any, op Operator) (bool, error) {
 	t, ok := val.(time.Time)
 	if !ok {
 		return false, newError(errType, val)
@@ -228,18 +228,18 @@ func isWithinTime(val interface{}, duration interface{}, op Operator) (bool, err
 	return false, nil
 }
 
-func toInterfaceSlice(input interface{}) ([]interface{}, bool) {
+func toInterfaceSlice(input any) ([]any, bool) {
 	switch v := input.(type) {
-	case []interface{}:
+	case []any:
 		return v, true
 	case []string:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
 		return out, true
 	case []bool:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
@@ -247,31 +247,31 @@ func toInterfaceSlice(input interface{}) ([]interface{}, bool) {
 
 	// Signed ints
 	case []int:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
 		return out, true
 	case []int8:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
 		return out, true
 	case []int16:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
 		return out, true
 	case []int32:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
 		return out, true
 	case []int64:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
@@ -279,31 +279,31 @@ func toInterfaceSlice(input interface{}) ([]interface{}, bool) {
 
 	// Unsigned ints
 	case []uint:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
 		return out, true
 	case []uint8:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
 		return out, true
 	case []uint16:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
 		return out, true
 	case []uint32:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
 		return out, true
 	case []uint64:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
@@ -311,13 +311,13 @@ func toInterfaceSlice(input interface{}) ([]interface{}, bool) {
 
 	// Floating point
 	case []float32:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
 		return out, true
 	case []float64:
-		out := make([]interface{}, len(v))
+		out := make([]any, len(v))
 		for i, val := range v {
 			out[i] = val
 		}
@@ -329,12 +329,12 @@ func toInterfaceSlice(input interface{}) ([]interface{}, bool) {
 	}
 }
 
-func toInterfaceSliceReflect(input interface{}) ([]interface{}, bool) {
+func toInterfaceSliceReflect(input any) ([]any, bool) {
 	val := reflect.ValueOf(input)
 	if val.Kind() != reflect.Slice {
 		return nil, false
 	}
-	result := make([]interface{}, val.Len())
+	result := make([]any, val.Len())
 	for i := 0; i < val.Len(); i++ {
 		result[i] = val.Index(i).Interface()
 	}
