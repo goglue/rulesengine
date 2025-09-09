@@ -52,6 +52,23 @@ func Evaluate(
 		}
 		return evaluation
 
+	case IfThen:
+		if len(node.Children) != 2 {
+			evaluation.Result = false
+			evaluation.Error = newError(errOperator, "IF_THEN requires exactly two child rules")
+			return evaluation
+		}
+		ifEvaluation := Evaluate(node.Children[0], data, opts)
+		thenEvaluation := Evaluate(node.Children[1], data, opts)
+		evaluation.Children = append(evaluation.Children, ifEvaluation, thenEvaluation)
+		// Material implication: A -> B is equivalent to !A or B
+		evaluation.Result = !ifEvaluation.Result || thenEvaluation.Result
+
+		if opts.Timing {
+			evaluation.TimeTaken = time.Since(now)
+		}
+		return evaluation
+
 	case Any, All, None:
 		arr, ok := toInterfaceSlice(resolveField(node.Field, data))
 		if !ok {
