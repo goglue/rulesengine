@@ -7,7 +7,7 @@ type (
 		fieldName string,
 		operator Operator,
 		actual,
-		expected interface{},
+		expected any,
 	)
 
 	// Options type are the configurations that enables/disables the debugging
@@ -25,7 +25,7 @@ func DefaultOptions() Options {
 		Logger: func(
 			fieldName string,
 			operator Operator,
-			actual, expected interface{},
+			actual, expected any,
 		) {
 		},
 	}

@@ -25,6 +25,7 @@ go get github.com/goglue/rulesengine
 | And         | Logical                 | Returns `true` if all child rules are `true`.                                        | 
 | Or          | Logical                 | Returns `true` if any or all child rule is `true`, otherwise `false`                 |
 | Not         | Logical                 | Returns the negation of the child rule's result.                                     |
+| IfThen      | Logical                 | Implements material implecation operator.                                            |
 | Eq          | Equality (Scalar types) | Checks if a field is equal to a given values.                                        |
 | Neq         | Equality (Scalar types) | Checks if a field is not equal to a given values.                                    |
 | Gt          | Numeric                 | Checks if a field is greater than the specified.                                     |
@@ -34,6 +35,7 @@ go get github.com/goglue/rulesengine
 | Between     | Numeric                 | Checks if a field is between the specified range.                                    |
 | In          | (Scalar types)          | Checks if field is in a specified list.                                              |
 | NotIn       | (Scalar types)          | Checks if field is not in a specified list.                                          |
+| AnyIn       | (Scalar types)          | Checks if any of field's values is in a specified list. Field should be array        |
 | Contains    | String                  | Checks if a field contains a specified `string`.                                     |
 | NotContains | String                  | Checks if a field does not contain a specified `string`.                             |
 | StartsWith  | String                  | Checks if a field starts with a `string`.                                            |
@@ -105,8 +107,8 @@ func main() {
         },
     }
 
-    data := map[string]interface{}{
-        "user": map[string]interface{}{
+    data := map[string]any{
+        "user": map[string]any{
             "name":    "Test",
             "age":     25,
             "country": "DE",

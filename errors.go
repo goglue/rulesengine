@@ -12,8 +12,8 @@ const (
 
 type (
 	Error struct {
-		Message string      `json:"message"`
-		Value   interface{} `json:"value"`
+		Message string `json:"message"`
+		Value   any    `json:"value"`
 	}
 )
 
@@ -21,7 +21,7 @@ func (e Error) Error() string {
 	return fmt.Sprintf("%s: [%v]", e.Message, e.Value)
 }
 
-func newError(msg string, val interface{}) error {
+func newError(msg string, val any) error {
 	return Error{
 		Message: msg,
 		Value:   val,

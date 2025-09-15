@@ -2,7 +2,7 @@ package rulesengine
 
 import "sync"
 
-type CustomFunc func(args ...interface{}) (bool, any, error)
+type CustomFunc func(args ...any) (bool, any, error)
 
 var (
 	customFuncRegistry = make(map[string]CustomFunc)

@@ -7,9 +7,10 @@ type (
 
 const (
 	// Logical
-	And Operator = "AND"
-	Or  Operator = "OR"
-	Not Operator = "NOT"
+	And    Operator = "AND"
+	Or     Operator = "OR"
+	Not    Operator = "NOT"
+	IfThen Operator = "IF_THEN"
 
 	// Equality
 	Eq  Operator = "EQ"
@@ -23,6 +24,7 @@ const (
 	Between Operator = "BETWEEN"
 	In      Operator = "IN"
 	NotIn   Operator = "NOT_IN"
+	AnyIn   Operator = "ANY_IN"
 
 	// String
 	Contains    Operator = "CONTAINS"

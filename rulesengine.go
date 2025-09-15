@@ -7,9 +7,7 @@ import (
 	"time"
 )
 
-var (
-	reMatchMap = map[string]*regexp.Regexp{}
-)
+var reMatchMap = map[string]*regexp.Regexp{}
 
 // Evaluate method executes the evaluation of the passed rule and all its
 // children, it returns [RuleResult] containing the rule evaluation results.
@@ -49,6 +47,23 @@ func Evaluate(
 		if node.Operator == Not {
 			evaluation.Result = !evaluation.Result
 		}
+		if opts.Timing {
+			evaluation.TimeTaken = time.Since(now)
+		}
+		return evaluation
+
+	case IfThen:
+		if len(node.Children) != 2 {
+			evaluation.Result = false
+			evaluation.Error = newError(errOperator, "IF_THEN requires exactly two child rules")
+			return evaluation
+		}
+		ifEvaluation := Evaluate(node.Children[0], data, opts)
+		thenEvaluation := Evaluate(node.Children[1], data, opts)
+		evaluation.Children = append(evaluation.Children, ifEvaluation, thenEvaluation)
+		// Material implication: A -> B is equivalent to !A or B
+		evaluation.Result = !ifEvaluation.Result || thenEvaluation.Result
+
 		if opts.Timing {
 			evaluation.TimeTaken = time.Since(now)
 		}
@@ -157,6 +172,12 @@ func evaluateRule(operator Operator, actual, expected any) (bool, any, error) {
 			return false, nil, err
 		} else if res {
 			return false, actual, nil
+		}
+		return true, nil, nil
+
+	case AnyIn:
+		if res, err := anyInList(actual, expected); !res || err != nil {
+			return res, actual, err
 		}
 		return true, nil, nil
 
