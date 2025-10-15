@@ -1,11 +1,15 @@
 package rulesengine
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"time"
 )
+
+var durationRegex = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)(ns|us|µs|ms|s|m|h|d|w|mo|y)`)
 
 func compareEqual(a, b any) bool {
 	return a == b
@@ -213,9 +217,14 @@ func isWithinTime(val any, duration any, op Operator) (bool, error) {
 	if !ok {
 		return false, newError(errType, val)
 	}
-	dur, ok := duration.(time.Duration)
+	durStr, ok := duration.(string)
 	if !ok {
 		return false, newError(errType, duration)
+	}
+
+	dur, err := parseFlexibleDuration(durStr)
+	if err != nil {
+		return false, newError(errType, durStr)
 	}
 
 	now := time.Now()
@@ -339,4 +348,50 @@ func toInterfaceSliceReflect(input any) ([]any, bool) {
 		result[i] = val.Index(i).Interface()
 	}
 	return result, true
+}
+
+// parseFlexibleDuration parses durations like "5h", "2d", "3w", "1mo", "1.5y"
+func parseFlexibleDuration(s string) (time.Duration, error) {
+	matches := durationRegex.FindAllStringSubmatch(s, -1)
+	if matches == nil {
+		return 0, errors.New("invalid duration: " + s)
+	}
+
+	var total time.Duration
+	for _, m := range matches {
+		valueStr, unit := m[1], m[2]
+		value, err := strconv.ParseFloat(valueStr, 64)
+		if err != nil {
+			return 0, fmt.Errorf("invalid number %q: %v", valueStr, err)
+		}
+
+		switch unit {
+		case "ns":
+			total += time.Duration(value)
+		case "us", "µs":
+			total += time.Duration(value * float64(time.Microsecond))
+		case "ms":
+			total += time.Duration(value * float64(time.Millisecond))
+		case "s":
+			total += time.Duration(value * float64(time.Second))
+		case "m":
+			total += time.Duration(value * float64(time.Minute))
+		case "h":
+			total += time.Duration(value * float64(time.Hour))
+		case "d":
+			total += time.Duration(value * float64(24*time.Hour))
+		case "w":
+			total += time.Duration(value * float64(7*24*time.Hour))
+		case "mo":
+			// Approximate month = 30 days
+			total += time.Duration(value * float64(30*24*time.Hour))
+		case "y":
+			// Approximate year = 365 days
+			total += time.Duration(value * float64(365*24*time.Hour))
+		default:
+			return 0, fmt.Errorf("unknown unit: %s", unit)
+		}
+	}
+
+	return total, nil
 }

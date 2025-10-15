@@ -12,7 +12,7 @@ import (
 var (
 	parsedTimeData, _ = time.Parse("2006-01-02", "2014-12-01")
 	parsedTimeExp, _  = time.Parse("2006-01-02", "2015-01-01")
-	last10Sec, _      = time.ParseDuration("10s")
+	last10Sec         = "10s"
 	testData          = []struct {
 		ruleNodes Rule
 		inputData map[string]any
