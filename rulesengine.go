@@ -139,7 +139,8 @@ func resolveField(path string, data map[string]any) any {
 }
 
 func evaluateRule(operator Operator, actual, expected any) (bool, any, error) {
-	if actual == nil {
+	if actual == nil && operator != IsNull && operator != NotExists &&
+		operator != IsNotNull && operator != Exists {
 		return false, actual, emptyValErr
 	}
 
@@ -229,16 +230,10 @@ func evaluateRule(operator Operator, actual, expected any) (bool, any, error) {
 
 	// ---------- Boolean ----------
 	case IsTrue:
-		if actual != true {
-			return false, actual, nil
-		}
-		return true, nil, nil
+		return actual == true, actual, nil
 
 	case IsFalse:
-		if actual != false {
-			return false, actual, nil
-		}
-		return true, nil, nil
+		return actual == false, actual, nil
 
 	// ---------- Date ----------
 	case Before, After:
