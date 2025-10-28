@@ -24,6 +24,9 @@ type (
 		// Result attribute is a boolean indicator whether the rule has passed
 		// or not.
 		Result bool `json:"result"`
+		// IsEmpty attribute indicates whether there was a value to compare or
+		// not, e.g. nil pointer
+		IsEmpty bool `json:"IsEmpty,omitempty"`
 		// Children attribute is the nested results of the nested rules.
 		Children []RuleResult `json:"children,omitempty"`
 		// Mismatch attribute holds the value that failed the rule evaluation.

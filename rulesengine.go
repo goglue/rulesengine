@@ -1,13 +1,17 @@
 package rulesengine
 
 import (
+	"errors"
 	"reflect"
 	"regexp"
 	"strings"
 	"time"
 )
 
-var reMatchMap = map[string]*regexp.Regexp{}
+var (
+	reMatchMap  = map[string]*regexp.Regexp{}
+	emptyValErr = newError("empty value", "")
+)
 
 // Evaluate method executes the evaluation of the passed rule and all its
 // children, it returns [RuleResult] containing the rule evaluation results.
@@ -112,6 +116,7 @@ func Evaluate(
 		evaluation.Result, evaluation.Mismatch, evaluation.Error = evaluateRule(
 			node.Operator, resolveField(node.Field, data), node.Value,
 		)
+		evaluation.IsEmpty = errors.Is(evaluation.Error, emptyValErr)
 		if opts.Timing {
 			evaluation.TimeTaken = time.Since(now)
 		}
@@ -134,19 +139,18 @@ func resolveField(path string, data map[string]any) any {
 }
 
 func evaluateRule(operator Operator, actual, expected any) (bool, any, error) {
+	if actual == nil && operator != IsNull && operator != NotExists &&
+		operator != IsNotNull && operator != Exists {
+		return false, actual, emptyValErr
+	}
+
 	switch operator {
 	// ---------- Equality ----------
 	case Eq:
-		if !compareEqual(actual, expected) {
-			return false, actual, nil
-		}
-		return true, nil, nil
+		return compareEqual(actual, expected), actual, nil
 
 	case Neq:
-		if compareEqual(actual, expected) {
-			return false, actual, nil
-		}
-		return true, nil, nil
+		return !compareEqual(actual, expected), actual, nil
 
 	// ---------- Numeric ----------
 	case Gt, Gte, Lt, Lte:
@@ -226,16 +230,10 @@ func evaluateRule(operator Operator, actual, expected any) (bool, any, error) {
 
 	// ---------- Boolean ----------
 	case IsTrue:
-		if actual != true {
-			return false, actual, nil
-		}
-		return true, nil, nil
+		return actual == true, actual, nil
 
 	case IsFalse:
-		if actual != false {
-			return false, actual, nil
-		}
-		return true, nil, nil
+		return actual == false, actual, nil
 
 	// ---------- Date ----------
 	case Before, After:
