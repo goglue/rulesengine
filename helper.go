@@ -19,6 +19,8 @@ func toString(v any) string {
 	switch s := v.(type) {
 	case string:
 		return s
+	case *string:
+		return *s
 	case fmt.Stringer:
 		return s.String()
 	default:
