@@ -32,6 +32,8 @@ func isNumeric(v any) bool {
 	switch v.(type) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float64, float32:
 		return true
+	case *int, *int8, *int16, *int32, *int64, *uint, *uint8, *uint16, *uint32, *uint64, *float64, *float32:
+		return true
 	}
 	return false
 }
@@ -66,6 +68,42 @@ func toFloat(v any) (float64, error) {
 		f, err := strconv.ParseFloat(val, 64)
 		if nil != err {
 			return 0, newError(errNumeric, val)
+		}
+		return f, nil
+	case *int:
+		if val == nil {
+			return 0, fmt.Errorf("nil pointer")
+		}
+		return float64(*val), nil
+	case *int8:
+		return float64(*val), nil
+	case *int16:
+		return float64(*val), nil
+	case *int32:
+		return float64(*val), nil
+	case *int64:
+		return float64(*val), nil
+	case *uint:
+		return float64(*val), nil
+	case *uint8:
+		return float64(*val), nil
+	case *uint16:
+		return float64(*val), nil
+	case *uint32:
+		return float64(*val), nil
+	case *uint64:
+		return float64(*val), nil
+	case *float32:
+		return float64(*val), nil
+	case *float64:
+		return *val, nil
+	case *string:
+		if val == nil {
+			return 0, fmt.Errorf("nil string pointer")
+		}
+		f, err := strconv.ParseFloat(*val, 64)
+		if err != nil {
+			return 0, newError(errNumeric, v)
 		}
 		return f, nil
 	}
