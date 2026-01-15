@@ -640,20 +640,20 @@ func TestEvaluate(t *testing.T) {
 func TestEvaluateWithCustomFunc(t *testing.T) {
 	assert := assertion.New(t)
 
-	RegisterFunc("isEmail", func(args ...any) (bool, any, error) {
+	RegisterFunc("isEmail", func(args ...any) (bool, error) {
 		dataEmail, ok := args[0].(string)
 		if !ok {
-			return false, nil, nil
+			return false, nil
 		}
 		passedEmail, ok := args[1].(string)
 		if !ok {
-			return false, nil, nil
+			return false, nil
 		}
 
 		return strings.Contains(dataEmail, "@") &&
 			strings.Contains(dataEmail, ".") &&
 			passedEmail == "floating.tester@domain.ext" &&
-			dataEmail == "some.email@domain.ext", nil, nil
+			dataEmail == "some.email@domain.ext", nil
 	})
 
 	ruleNode := Rule{

@@ -29,8 +29,8 @@ type (
 		IsEmpty bool `json:"IsEmpty,omitempty"`
 		// Children attribute is the nested results of the nested rules.
 		Children []RuleResult `json:"children,omitempty"`
-		// Mismatch attribute holds the value that failed the rule evaluation.
-		Mismatch any `json:"mismatch,omitempty"`
+		// Input attribute holds the original value as given by the user.
+		Input any `json:"input,omitempty"`
 		// TimeTaken is a debugging attribute and holds the duration of the
 		// rule evaluation.
 		TimeTaken time.Duration `json:"timeTaken,omitempty"`
