@@ -6,10 +6,14 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
-var durationRegex = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)(ns|us|µs|ms|s|m|h|d|w|mo|y)`)
+var (
+	durationRegex     = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)(ns|us|µs|ms|s|m|h|d|w|mo|y)`)
+	relativeTimeRegex = regexp.MustCompile(`(?i)^\s*(now|today|thisday|thismonth|thisyear)\s*(?:([+-])\s*(\d+)\s*([a-z]+)?)?\s*$`)
+)
 
 func compareEqual(a, b any) bool {
 	return a == b
@@ -226,9 +230,9 @@ func compareTime(a, b any, op Operator) (bool, error) {
 	if !aok {
 		return false, newError(errType, a)
 	}
-	bt, bok := b.(time.Time)
-	if !bok {
-		return false, newError(errType, b)
+	bt, err := resolveExpectedTime(b, time.Now())
+	if err != nil {
+		return false, err
 	}
 	switch op {
 	case Before:
@@ -244,12 +248,13 @@ func isTimeBetween(val any, rangeVal any) (bool, error) {
 	if !ok {
 		return false, newError(errType, val)
 	}
-	r, ok := rangeVal.([]time.Time)
-	if !ok || len(r) != 2 {
-		return false, newError(errType, rangeVal)
+	now := time.Now()
+	start, end, err := normalizeTimeRange(rangeVal, now)
+	if err != nil {
+		return false, err
 	}
-	return (v.After(r[0]) || v.Equal(r[0])) &&
-		(v.Before(r[1]) || v.Equal(r[1])), nil
+	return (v.After(start) || v.Equal(start)) &&
+		(v.Before(end) || v.Equal(end)), nil
 }
 
 func isWithinTime(val any, duration any, op Operator) (bool, error) {
@@ -275,6 +280,143 @@ func isWithinTime(val any, duration any, op Operator) (bool, error) {
 		return t.Before(now.Add(dur)), nil
 	}
 	return false, nil
+}
+
+func resolveExpectedTime(expected any, now time.Time) (time.Time, error) {
+	switch v := expected.(type) {
+	case time.Time:
+		return v, nil
+	case *time.Time:
+		if v == nil {
+			return time.Time{}, newError(errType, expected)
+		}
+		return *v, nil
+	case string:
+		t, err := parseRelativeTime(v, now)
+		if err != nil {
+			return time.Time{}, newError(errType, expected)
+		}
+		return t, nil
+	default:
+		return time.Time{}, newError(errType, expected)
+	}
+}
+
+func normalizeTimeRange(rangeVal any, now time.Time) (time.Time, time.Time, error) {
+	switch r := rangeVal.(type) {
+	case []time.Time:
+		if len(r) != 2 {
+			return time.Time{}, time.Time{}, newError(errType, rangeVal)
+		}
+		return r[0], r[1], nil
+	case []any:
+		if len(r) != 2 {
+			return time.Time{}, time.Time{}, newError(errType, rangeVal)
+		}
+		start, err := resolveExpectedTime(r[0], now)
+		if err != nil {
+			return time.Time{}, time.Time{}, err
+		}
+		end, err := resolveExpectedTime(r[1], now)
+		if err != nil {
+			return time.Time{}, time.Time{}, err
+		}
+		return start, end, nil
+	default:
+		return time.Time{}, time.Time{}, newError(errType, rangeVal)
+	}
+}
+
+func parseRelativeTime(input string, now time.Time) (time.Time, error) {
+	match := relativeTimeRegex.FindStringSubmatch(input)
+	if match == nil {
+		return time.Time{}, fmt.Errorf("invalid relative time: %s", input)
+	}
+
+	base := strings.ToLower(match[1])
+	sign := match[2]
+	valueStr := match[3]
+	unit := strings.ToLower(match[4])
+
+	baseTime, err := relativeBaseTime(base, now)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	if valueStr == "" {
+		if sign != "" || unit != "" {
+			return time.Time{}, fmt.Errorf("invalid relative time: %s", input)
+		}
+		return baseTime, nil
+	}
+
+	if unit == "" {
+		unit = defaultUnitForBase(base)
+		if unit == "" {
+			return time.Time{}, fmt.Errorf("missing unit for relative time: %s", input)
+		}
+	}
+
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid relative time number: %s", valueStr)
+	}
+	if sign == "-" {
+		value = -value
+	}
+
+	switch unit {
+	case "y", "yr", "yrs", "year", "years":
+		return baseTime.AddDate(value, 0, 0), nil
+	case "mo", "mon", "month", "months":
+		return baseTime.AddDate(0, value, 0), nil
+	case "w", "week", "weeks":
+		return baseTime.AddDate(0, 0, 7*value), nil
+	case "d", "day", "days":
+		return baseTime.AddDate(0, 0, value), nil
+	case "h", "hr", "hrs", "hour", "hours":
+		return baseTime.Add(time.Duration(value) * time.Hour), nil
+	case "m", "min", "mins", "minute", "minutes":
+		return baseTime.Add(time.Duration(value) * time.Minute), nil
+	case "s", "sec", "secs", "second", "seconds":
+		return baseTime.Add(time.Duration(value) * time.Second), nil
+	case "ms", "millisecond", "milliseconds":
+		return baseTime.Add(time.Duration(value) * time.Millisecond), nil
+	case "us", "µs", "microsecond", "microseconds":
+		return baseTime.Add(time.Duration(value) * time.Microsecond), nil
+	case "ns", "nanosecond", "nanoseconds":
+		return baseTime.Add(time.Duration(value) * time.Nanosecond), nil
+	default:
+		return time.Time{}, fmt.Errorf("unknown relative time unit: %s", unit)
+	}
+}
+
+func relativeBaseTime(base string, now time.Time) (time.Time, error) {
+	switch base {
+	case "now":
+		return now, nil
+	case "today", "thisday":
+		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()), nil
+	case "thismonth":
+		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()), nil
+	case "thisyear":
+		return time.Date(now.Year(), time.January, 1, 0, 0, 0, 0, now.Location()), nil
+	default:
+		return time.Time{}, fmt.Errorf("unknown relative time base: %s", base)
+	}
+}
+
+func defaultUnitForBase(base string) string {
+	switch base {
+	case "thisyear":
+		return "y"
+	case "thismonth":
+		return "mo"
+	case "today", "thisday":
+		return "d"
+	default:
+		return ""
+	}
 }
 
 func toInterfaceSlice(input any) ([]any, bool) {
