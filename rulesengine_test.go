@@ -13,6 +13,8 @@ var (
 	parsedTimeData, _ = time.Parse("2006-01-02", "2014-12-01")
 	parsedTimeExp, _  = time.Parse("2006-01-02", "2015-01-01")
 	last10Sec         = "10s"
+	relativeNow       = time.Now()
+	relativeTime      = time.Date(relativeNow.Year(), time.June, 1, 12, 0, 0, 0, relativeNow.Location())
 	testData          = []struct {
 		ruleNodes Rule
 		inputData map[string]any
@@ -323,6 +325,27 @@ var (
 			},
 			inputData: map[string]any{"startDate": parsedTimeExp.Add(-3 * time.Hour)},
 			expResult: RuleResult{Result: false},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: Before, Field: "startDate", Value: "thisYear+1y",
+			},
+			inputData: map[string]any{"startDate": relativeTime},
+			expResult: RuleResult{Result: true},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: After, Field: "startDate", Value: "thisYear-1",
+			},
+			inputData: map[string]any{"startDate": relativeTime},
+			expResult: RuleResult{Result: true},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: DateBetween, Field: "startDate", Value: []any{"thisYear", "thisYear+1y"},
+			},
+			inputData: map[string]any{"startDate": relativeTime},
+			expResult: RuleResult{Result: true},
 		},
 		{
 			ruleNodes: Rule{
