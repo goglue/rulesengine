@@ -255,6 +255,12 @@ func evaluateRule(operator Operator, actual, expected any) (bool, error) {
 		}
 		return true, nil
 
+	case YearEq, MonthEq:
+		if res, err := compareTimePart(actual, expected, operator); !res || err != nil {
+			return res, err
+		}
+		return true, nil
+
 	// ---------- Null / Existence ----------
 	case IsNull, NotExists:
 		if actual != nil {

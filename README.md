@@ -51,6 +51,8 @@ go get github.com/goglue/rulesengine
 | DateBetween | Date / Time             | Checks is a time is between a given range.                                           |
 | WithinLast  | Date / Time             | Checks is a time is within the last X of a given duration.                           |
 | WithinNext  | Date / Time             | Checks is a time is within the next X a given duration.                              |
+| YearEq      | Date / Time             | Checks is a time is in a given year.                                                 |
+| MonthEq     | Date / Time             | Checks is a time is in a given month.                                                |
 | Any         | Array                   | Returns `true` if any element statisfy the given rule.                               |
 | All         | Array                   | Returns `true` if all elements satisfy the given rule.                               |
 | None        | Array                   | Returns `true` if no elements satisfy the given rule.                                |
