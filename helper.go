@@ -282,6 +282,26 @@ func isWithinTime(val any, duration any, op Operator) (bool, error) {
 	return false, nil
 }
 
+func compareTimePart(actual any, expected any, op Operator) (bool, error) {
+	t, ok := actual.(time.Time)
+	if !ok {
+		return false, newError(errType, actual)
+	}
+	value, err := toFloat(expected)
+	if err != nil {
+		return false, err
+	}
+	target := int(value)
+
+	switch op {
+	case YearEq:
+		return t.Year() == target, nil
+	case MonthEq:
+		return int(t.Month()) == target, nil
+	}
+	return false, nil
+}
+
 func resolveExpectedTime(expected any, now time.Time) (time.Time, error) {
 	switch v := expected.(type) {
 	case time.Time:

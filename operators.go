@@ -46,6 +46,8 @@ const (
 	DateBetween Operator = "DATE_BETWEEN"
 	WithinLast  Operator = "WITHIN_LAST"
 	WithinNext  Operator = "WITHIN_NEXT"
+	YearEq      Operator = "YEAR_EQ"
+	MonthEq     Operator = "MONTH_EQ"
 
 	// Arrays
 	Any  Operator = "ANY"
