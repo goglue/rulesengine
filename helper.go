@@ -287,11 +287,29 @@ func compareTimePart(actual any, expected any, op Operator) (bool, error) {
 	if !ok {
 		return false, newError(errType, actual)
 	}
-	value, err := toFloat(expected)
-	if err != nil {
-		return false, err
+
+	var target int
+	switch v := expected.(type) {
+	case string:
+		resolved, err := resolveExpectedTime(v, time.Now())
+		if err != nil {
+			return false, err
+		}
+		switch op {
+		case YearEq:
+			target = resolved.Year()
+		case MonthEq:
+			target = int(resolved.Month())
+		default:
+			return false, nil
+		}
+	default:
+		value, err := toFloat(expected)
+		if err != nil {
+			return false, err
+		}
+		target = int(value)
 	}
-	target := int(value)
 
 	switch op {
 	case YearEq:
