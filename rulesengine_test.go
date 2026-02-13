@@ -370,6 +370,20 @@ var (
 		},
 		{
 			ruleNodes: Rule{
+				Operator: YearEq, Field: "startDate", Value: "thisYear-1",
+			},
+			inputData: map[string]any{"startDate": relativeTime.AddDate(-1, 0, 0)},
+			expResult: RuleResult{Result: true},
+		},
+		{
+			ruleNodes: Rule{
+				Operator: MonthEq, Field: "startDate", Value: "thisMonth",
+			},
+			inputData: map[string]any{"startDate": time.Date(relativeNow.Year(), relativeNow.Month(), 1, 12, 0, 0, 0, relativeNow.Location())},
+			expResult: RuleResult{Result: true},
+		},
+		{
+			ruleNodes: Rule{
 				Operator: WithinLast, Field: "startDate", Value: last10Sec,
 			},
 			inputData: map[string]any{"startDate": time.Now().Add(-5 * time.Second)},
