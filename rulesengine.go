@@ -1,6 +1,7 @@
 package rulesengine
 
 import (
+	"encoding/json"
 	"errors"
 	"reflect"
 	"regexp"
@@ -80,12 +81,9 @@ func Evaluate(
 			evaluation.Error = newError(errType, node.Field)
 			return evaluation
 		}
-		ruleVal, ok := node.Value.(Rule)
-		if !ok {
-			evaluation.Result = false
-			evaluation.Error = newError(errType, node.Value)
-			return evaluation
-		}
+		jsB, _ := json.Marshal(node.Value)
+		ruleVal := Rule{}
+		_ = json.Unmarshal(jsB, &ruleVal)
 
 		dataLen := len(arr)
 		var passCount int
