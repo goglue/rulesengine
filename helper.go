@@ -225,10 +225,37 @@ func compareLength(val any, target any, op Operator) (bool, error) {
 	return false, nil
 }
 
+// toTime converts a value to time.Time, accepting time.Time, *time.Time,
+// RFC3339 strings, and date-only strings (YYYY-MM-DD).
+func toTime(v any) (time.Time, error) {
+	switch t := v.(type) {
+	case time.Time:
+		return t, nil
+	case *time.Time:
+		if t == nil {
+			return time.Time{}, newError(errType, v)
+		}
+		return *t, nil
+	case string:
+		if parsed, err := time.Parse(time.RFC3339, t); err == nil {
+			return parsed, nil
+		}
+		if parsed, err := time.Parse(time.RFC3339Nano, t); err == nil {
+			return parsed, nil
+		}
+		if parsed, err := time.Parse("2006-01-02", t); err == nil {
+			return parsed, nil
+		}
+		return time.Time{}, newError(errType, v)
+	default:
+		return time.Time{}, newError(errType, v)
+	}
+}
+
 func compareTime(a, b any, op Operator) (bool, error) {
-	at, aok := a.(time.Time)
-	if !aok {
-		return false, newError(errType, a)
+	at, err := toTime(a)
+	if err != nil {
+		return false, err
 	}
 	bt, err := resolveExpectedTime(b, time.Now())
 	if err != nil {
@@ -244,9 +271,9 @@ func compareTime(a, b any, op Operator) (bool, error) {
 }
 
 func isTimeBetween(val any, rangeVal any) (bool, error) {
-	v, ok := val.(time.Time)
-	if !ok {
-		return false, newError(errType, val)
+	v, err := toTime(val)
+	if err != nil {
+		return false, err
 	}
 	now := time.Now()
 	start, end, err := normalizeTimeRange(rangeVal, now)
@@ -258,9 +285,9 @@ func isTimeBetween(val any, rangeVal any) (bool, error) {
 }
 
 func isWithinTime(val any, duration any, op Operator) (bool, error) {
-	t, ok := val.(time.Time)
-	if !ok {
-		return false, newError(errType, val)
+	t, err := toTime(val)
+	if err != nil {
+		return false, err
 	}
 	durStr, ok := duration.(string)
 	if !ok {
@@ -283,9 +310,9 @@ func isWithinTime(val any, duration any, op Operator) (bool, error) {
 }
 
 func compareTimePart(actual any, expected any, op Operator) (bool, error) {
-	t, ok := actual.(time.Time)
-	if !ok {
-		return false, newError(errType, actual)
+	t, err := toTime(actual)
+	if err != nil {
+		return false, err
 	}
 
 	var target int

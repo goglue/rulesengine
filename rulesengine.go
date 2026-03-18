@@ -88,7 +88,13 @@ func Evaluate(
 		dataLen := len(arr)
 		var passCount int
 		for _, elem := range arr {
-			res := Evaluate(ruleVal, map[string]any{"": elem}, opts)
+			var elemData map[string]any
+			if m, ok := elem.(map[string]any); ok {
+				elemData = m
+			} else {
+				elemData = map[string]any{"": elem}
+			}
+			res := Evaluate(ruleVal, elemData, opts)
 			evaluation.Children = append(evaluation.Children, res)
 			if res.Result {
 				passCount++
