@@ -2,7 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/goglue/rulesengine.svg)](https://pkg.go.dev/github.com/goglue/rulesengine)
 ![Build Status](https://github.com/goglue/rulesengine/actions/workflows/pulls-pipeline.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/Coverage-59.6%25-yellow)
+![Coverage](https://img.shields.io/badge/Coverage-74.2%25-brightgreen)
 
 A Go library for declarative, structured rule evaluation against arbitrary data maps — supporting nested logic, array iteration, date arithmetic, regex matching, and extensible custom functions.
 
